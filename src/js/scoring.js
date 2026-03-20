@@ -69,6 +69,33 @@ function getRank(currentScore, thresholds) {
   };
 }
 
-function formatShareText(date, rank, foundCount, totalCount, score) {
-  return `🌸 Bloombert ${date}\n${rank.emoji} ${rank.name}\n${foundCount}/${totalCount} words · ${score} points\nhttps://tzelynn.github.io/bloombert`;
+function formatShareText(date, rank, foundCount, totalCount, score, bloomCount) {
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var parts = date.split('-');
+  var prettyDate = months[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10) + ', ' + parts[0];
+
+  // Progress bar: 8 squares based on rank index
+  var rankNames = ['Seedling','Sprout','Bud','Bloom','Petal','Sunflower','Bouquet','Garden Master'];
+  var idx = rankNames.indexOf(rank.name);
+  var filled = idx + 1; // at least 1 filled for Seedling
+  var bar = '';
+  for (var i = 0; i < 8; i++) {
+    bar += i < filled ? '🌸' : '🤍';
+  }
+
+  var lines = [
+    '🌷 Bloombert · ' + prettyDate,
+    rank.emoji + ' ' + rank.name + ' · ' + score + ' pts',
+    bar,
+    foundCount + ' words found',
+  ];
+
+  if (bloomCount > 0) {
+    lines[3] += ' · ✨ ' + bloomCount + ' bloom' + (bloomCount > 1 ? 's' : '');
+  }
+
+  lines.push('');
+  lines.push('https://tzelynn.github.io/bloombert');
+
+  return lines.join('\n');
 }

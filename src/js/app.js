@@ -33,10 +33,14 @@
   const btnHowToPlay = $('btn-how-to-play');
   const btnStats = $('btn-stats');
   const btnShare = $('btn-share');
+  const btnShareHeader = $('btn-share-header');
   const modalHowToPlay = $('modal-how-to-play');
   const modalStats = $('modal-stats');
   const modalBloom = $('modal-bloom-celebration');
   const bloomWordDisplay = $('bloom-word-display');
+  const modalShare = $('modal-share');
+  const sharePreview = $('share-preview');
+  const btnCopyShare = $('btn-copy-share');
 
   // --- Init ---
   function init() {
@@ -233,14 +237,14 @@
   }
 
   // --- Score float ---
+  var scoreFloatTimer = null;
   function showScoreFloat(text) {
+    clearTimeout(scoreFloatTimer);
     scoreFloat.textContent = text;
-    scoreFloat.classList.remove('score-float--active');
-    void scoreFloat.offsetWidth; // force reflow
     scoreFloat.classList.add('score-float--active');
-    scoreFloat.addEventListener('animationend', () => {
+    scoreFloatTimer = setTimeout(function() {
       scoreFloat.classList.remove('score-float--active');
-    }, { once: true });
+    }, 2000);
   }
 
   // --- Modals ---
@@ -260,12 +264,27 @@
   }
 
   // --- Share ---
-  function shareResults() {
+  function getShareText() {
     const rank = getRank(currentScore, thresholds);
-    const text = formatShareText(dateKey, rank, foundWords.size, puzzle.validWords.length, currentScore);
+    const bloomCount = [...foundWords].filter(w => isBloom(w, puzzle.letters)).length;
+    return formatShareText(dateKey, rank, foundWords.size, puzzle.validWords.length, currentScore, bloomCount);
+  }
+
+  function shareResults() {
+    // Close stats modal if open
+    closeModal(modalStats);
+
+    const text = getShareText();
+    sharePreview.textContent = text;
+    openModal(modalShare);
+  }
+
+  function copyShareText() {
+    const text = getShareText();
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
-        showToast('Copied to clipboard!');
+        btnCopyShare.textContent = '✅ Copied!';
+        setTimeout(() => { btnCopyShare.textContent = '📋 Copy to Clipboard'; }, 2000);
       }).catch(() => {
         fallbackCopy(text);
       });
@@ -283,7 +302,8 @@
     ta.select();
     try {
       document.execCommand('copy');
-      showToast('Copied to clipboard!');
+      btnCopyShare.textContent = '✅ Copied!';
+      setTimeout(() => { btnCopyShare.textContent = '📋 Copy to Clipboard'; }, 2000);
     } catch (e) {
       showToast('Could not copy');
     }
@@ -330,6 +350,8 @@
 
     // Share
     if (btnShare) btnShare.addEventListener('click', shareResults);
+    if (btnShareHeader) btnShareHeader.addEventListener('click', shareResults);
+    if (btnCopyShare) btnCopyShare.addEventListener('click', copyShareText);
 
     // Modal close — backdrop, X button, and data-modal buttons
     document.querySelectorAll('.modal').forEach((modal) => {
