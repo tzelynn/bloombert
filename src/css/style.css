@@ -104,6 +104,7 @@ body {
   justify-content: center;
   border-radius: 50%;
   transition: background-color 0.15s;
+  color: var(--warm-grey);
 }
 
 .icon-btn:hover { background: var(--cream-dark); }
@@ -405,6 +406,9 @@ body {
   min-height: 44px;
   min-width: 44px;
   transition: background-color 0.15s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .action-btn:active { transform: scale(0.95); }
@@ -603,6 +607,10 @@ body {
   cursor: pointer;
   transition: background-color 0.15s;
   margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .share-btn:hover { background: #4a93c4; }

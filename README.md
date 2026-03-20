@@ -45,12 +45,12 @@ npx serve .
 | Rank | % of Total |
 |------|-----------|
 | 🌱 Seedling | 0% |
-| 🌿 Sprout | 5% |
-| 🌼 Bud | 12% |
-| 🌸 Bloom | 25% |
-| 🌺 Petal | 40% |
-| 🌻 Sunflower | 60% |
-| 💐 Bouquet | 80% |
+| 🌿 Sprout | 2% |
+| 🌼 Bud | 5% |
+| 🌸 Bloom | 10% |
+| 🌺 Petal | 25% |
+| 🌻 Sunflower | 45% |
+| 💐 Bouquet | 70% |
 | 🌟 Garden Master | 100% |
 
 ## Project Structure
