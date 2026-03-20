@@ -7,8 +7,10 @@
   --warm-grey:     #6B6560;
   --charcoal:      #2C2825;
   --mint:          #8EC9A2;
+  --light-mint:    #b9e7c8;
   --coral:         #E8857A;
-  --gold:          #D4A84B;
+  --gold:          #ffe09e;
+  --light-pink:    #F8D0D8;
   --shadow:        rgba(44,40,37,0.10);
   --font-display:  'Baloo 2', cursive;
   --font-body:     'Nunito', sans-serif;
@@ -104,6 +106,7 @@ body {
   justify-content: center;
   border-radius: 50%;
   transition: background-color 0.15s;
+  color: var(--warm-grey);
 }
 
 .icon-btn:hover { background: var(--cream-dark); }
@@ -143,7 +146,7 @@ body {
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--blue-mid), var(--blue-sat));
+  background: linear-gradient(90deg, #F8C8D4, #F2A0B4);
   border-radius: 4px;
   width: 0%;
   transition: width 600ms ease-out;
@@ -171,7 +174,7 @@ body {
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--blue-light);
+  background: var(--light-mint);
   font-size: 12px;
 }
 
@@ -191,7 +194,7 @@ body {
   overflow-x: auto;
   padding-bottom: 6px;
   scrollbar-width: thin;
-  scrollbar-color: var(--mint) transparent;
+  scrollbar-color: var(--blue-light) transparent;
 }
 
 .found-words-list::-webkit-scrollbar {
@@ -203,7 +206,7 @@ body {
 }
 
 .found-words-list::-webkit-scrollbar-thumb {
-  background: var(--mint);
+  background: var(--blue-light);
   border-radius: 4px;
 }
 
@@ -220,8 +223,8 @@ body {
 }
 
 .word-pill--bloom {
-  background: var(--gold);
-  color: white;
+  background: #F5E6B8;
+  color: #7A6420;
 }
 
 .found-count-row {
@@ -405,6 +408,9 @@ body {
   min-height: 44px;
   min-width: 44px;
   transition: background-color 0.15s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .action-btn:active { transform: scale(0.95); }
@@ -603,6 +609,10 @@ body {
   cursor: pointer;
   transition: background-color 0.15s;
   margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .share-btn:hover { background: #4a93c4; }
@@ -625,6 +635,113 @@ body {
 
 .modal-card--share {
   text-align: center;
+}
+
+/* Garden graph */
+.garden-graph {
+  margin: 20px 0 12px;
+}
+
+.garden-graph-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.garden-graph-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  height: 140px;
+  padding: 0 4px;
+  background:
+    linear-gradient(180deg, transparent 85%, #d4e8c2 85%, #c5deb0 100%);
+  border-radius: 12px;
+  position: relative;
+}
+
+.garden-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 44px;
+  height: 100%;
+  justify-content: flex-end;
+  padding-bottom: 4px;
+}
+
+.garden-col--today .garden-day {
+  font-weight: 700;
+  color: var(--blue-sat);
+}
+
+.garden-col--today .garden-stem {
+  background: linear-gradient(180deg, var(--blue-sat), var(--mint));
+}
+
+.garden-flower {
+  font-size: 18px;
+  line-height: 1;
+  margin-bottom: 2px;
+  animation: garden-sway 3s ease-in-out infinite;
+}
+
+@keyframes garden-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.garden-stem-wrap {
+  width: 6px;
+  height: 60%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.garden-stem {
+  width: 100%;
+  background: linear-gradient(180deg, var(--mint), #6aab7d);
+  border-radius: 3px;
+  min-height: 2px;
+  transition: height 600ms ease-out;
+}
+
+.garden-count {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-top: 2px;
+  line-height: 1;
+}
+
+.garden-day {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--warm-grey);
+  margin-top: 2px;
+  line-height: 1;
+}
+
+.garden-date {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--warm-grey);
+  opacity: 0.7;
+  margin-top: 1px;
+  line-height: 1;
+}
+
+.garden-col--today .garden-date {
+  color: var(--blue-sat);
+  opacity: 1;
 }
 
 /* Bloom celebration modal */

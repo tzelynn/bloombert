@@ -10,6 +10,10 @@
   let dateKey = '';
   let stats = {};
 
+  // --- Icon SVGs ---
+  const ICON_CLIPBOARD = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+  const ICON_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
   // --- DOM refs ---
   const $ = (id) => document.getElementById(id);
   const inputText = $('input-text');
@@ -260,7 +264,67 @@
     $('stat-played').textContent = stats.gamesPlayed || 0;
     $('stat-words').textContent = stats.totalWords || 0;
     $('stat-streak').textContent = stats.currentStreak || 0;
-    $('stat-best-streak').textContent = stats.bestStreak || 0;
+    $('stat-best-streak').textContent = Math.max(stats.bestStreak || 0, stats.currentStreak || 0);
+    renderGardenGraph();
+  }
+
+  function renderGardenGraph() {
+    var container = $('garden-graph');
+    if (!container) return;
+    var data = getDailyWordCounts(dateKey, 7, foundWords.size);
+    var maxWords = Math.max.apply(null, data.map(function(d) { return d.words; }));
+    if (maxWords === 0) maxWords = 1;
+    var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var flowers = ['🌱','🌿','🌼','🌸','🌺','🌻','💐'];
+
+    container.innerHTML = '';
+    for (var i = 0; i < data.length; i++) {
+      var entry = data[i];
+      var pct = Math.round((entry.words / maxWords) * 100);
+      var isToday = entry.date === dateKey;
+      var dayDate = new Date(entry.date + 'T00:00:00');
+      var dayLabel = dayNames[dayDate.getDay()];
+
+      // Pick flower based on word count tier
+      var flowerIdx = entry.words === 0 ? 0 : Math.min(Math.floor((entry.words / maxWords) * (flowers.length - 1)) + 1, flowers.length - 1);
+      var flower = flowers[flowerIdx];
+
+      var col = document.createElement('div');
+      col.className = 'garden-col' + (isToday ? ' garden-col--today' : '');
+
+      var flowerEl = document.createElement('div');
+      flowerEl.className = 'garden-flower';
+      flowerEl.textContent = flower;
+
+      var stemWrap = document.createElement('div');
+      stemWrap.className = 'garden-stem-wrap';
+
+      var stem = document.createElement('div');
+      stem.className = 'garden-stem';
+      stem.style.height = (pct === 0 ? 4 : pct) + '%';
+
+      stemWrap.appendChild(stem);
+
+      var count = document.createElement('div');
+      count.className = 'garden-count';
+      count.textContent = entry.words;
+
+      var label = document.createElement('div');
+      label.className = 'garden-day';
+      label.textContent = dayLabel;
+
+      var dateParts = entry.date.split('-');
+      var dateLabel = document.createElement('div');
+      dateLabel.className = 'garden-date';
+      dateLabel.textContent = dateParts[2] + '/' + dateParts[1];
+
+      col.appendChild(flowerEl);
+      col.appendChild(stemWrap);
+      col.appendChild(count);
+      col.appendChild(label);
+      col.appendChild(dateLabel);
+      container.appendChild(col);
+    }
   }
 
   // --- Share ---
@@ -283,8 +347,8 @@
     const text = getShareText();
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
-        btnCopyShare.textContent = '✅ Copied!';
-        setTimeout(() => { btnCopyShare.textContent = '📋 Copy to Clipboard'; }, 2000);
+        btnCopyShare.innerHTML = ICON_CHECK + ' Copied!';
+        setTimeout(() => { btnCopyShare.innerHTML = ICON_CLIPBOARD + ' Copy to Clipboard'; }, 2000);
       }).catch(() => {
         fallbackCopy(text);
       });
@@ -302,8 +366,8 @@
     ta.select();
     try {
       document.execCommand('copy');
-      btnCopyShare.textContent = '✅ Copied!';
-      setTimeout(() => { btnCopyShare.textContent = '📋 Copy to Clipboard'; }, 2000);
+      btnCopyShare.innerHTML = ICON_CHECK + ' Copied!';
+      setTimeout(() => { btnCopyShare.innerHTML = ICON_CLIPBOARD + ' Copy to Clipboard'; }, 2000);
     } catch (e) {
       showToast('Could not copy');
     }

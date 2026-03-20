@@ -42,6 +42,30 @@ function saveStats(stats) {
   }
 }
 
+function getDailyWordCounts(todayKey, numDays, todayWords) {
+  var counts = [];
+  var d = new Date(todayKey + 'T00:00:00');
+  for (var i = numDays - 1; i >= 0; i--) {
+    var date = new Date(d);
+    date.setDate(date.getDate() - i);
+    var y = date.getFullYear();
+    var m = String(date.getMonth() + 1).padStart(2, '0');
+    var dd = String(date.getDate()).padStart(2, '0');
+    var key = y + '-' + m + '-' + dd;
+    var wordCount = 0;
+    if (key === todayKey && todayWords !== undefined) {
+      wordCount = todayWords;
+    } else {
+      var state = loadState(key);
+      if (state && state.foundWords) {
+        wordCount = state.foundWords instanceof Set ? state.foundWords.size : state.foundWords.length;
+      }
+    }
+    counts.push({ date: key, words: wordCount });
+  }
+  return counts;
+}
+
 function checkAndUpdateStreak(stats, todayKey) {
   if (!stats.lastPlayedDate) {
     stats.currentStreak = 1;
