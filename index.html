@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bloombert 🌸</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/style.css">
+</head>
+<body>
+  <!-- Background decoration layer -->
+  <div class="bg-petals" aria-hidden="true">
+    <svg class="petal petal-1" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><ellipse cx="60" cy="90" rx="40" ry="80" fill="currentColor"/></svg>
+    <svg class="petal petal-2" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg"><path d="M50 0 C80 40, 90 120, 50 160 C10 120, 20 40, 50 0Z" fill="currentColor"/></svg>
+    <svg class="petal petal-3" viewBox="0 0 140 200" xmlns="http://www.w3.org/2000/svg"><ellipse cx="70" cy="100" rx="50" ry="90" fill="currentColor"/></svg>
+    <svg class="petal petal-4" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg"><path d="M50 0 C85 30, 100 130, 50 160 C0 130, 15 30, 50 0Z" fill="currentColor"/></svg>
+    <svg class="petal petal-5" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><ellipse cx="60" cy="90" rx="35" ry="85" fill="currentColor"/></svg>
+  </div>
+
+  <!-- Main game container -->
+  <div class="game-container">
+
+    <!-- Header -->
+    <header class="game-header">
+      <div class="logo">bloombert <span class="logo-flower">🌸</span></div>
+      <div class="header-meta">
+        <span id="streak-display" class="streak"></span>
+        <button id="btn-stats" class="icon-btn" aria-label="Stats">📊</button>
+        <button id="btn-how-to-play" class="icon-btn" aria-label="How to play">❓</button>
+      </div>
+    </header>
+
+    <!-- Rank + progress -->
+    <section class="rank-section">
+      <div class="rank-badge">
+        <span id="rank-emoji" class="rank-emoji">🌱</span>
+        <span id="rank-name" class="rank-name">Seedling</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="progress-bar-fill" class="progress-bar-fill"></div>
+        <span id="progress-label" class="progress-label">0 pts</span>
+      </div>
+      <div class="puzzle-meta">
+        <span id="difficulty-badge" class="difficulty-badge"></span>
+        <span id="date-display" class="date-display"></span>
+      </div>
+    </section>
+
+    <!-- Found words -->
+    <section class="found-section">
+      <div id="found-words-list" class="found-words-list" role="list">
+        <!-- Word pills injected here by app.js -->
+      </div>
+      <div class="found-count-row">
+        <span id="found-count" class="found-count">0 words</span>
+        <span id="score-display" class="score-display">0 pts</span>
+      </div>
+    </section>
+
+    <!-- Current input display -->
+    <div id="input-display" class="input-display" aria-live="polite">
+      <span id="input-text" class="input-text"></span>
+      <span class="input-caret" aria-hidden="true"></span>
+    </div>
+
+    <!-- Flower grid -->
+    <section class="hex-grid-section">
+      <div id="hex-grid" class="flower-grid" role="group" aria-label="Letter tiles">
+        <button class="hex-tile hex-tile--key flower-center" data-index="0" data-letter="" data-key="true" aria-label=""><span class="hex-letter"></span></button>
+        <button class="hex-tile flower-petal" style="--petal-angle: 0deg" data-index="1" data-letter="" aria-label=""><span class="hex-letter"></span></button>
+        <button class="hex-tile flower-petal" style="--petal-angle: 60deg" data-index="2" data-letter="" aria-label=""><span class="hex-letter"></span></button>
+        <button class="hex-tile flower-petal" style="--petal-angle: 120deg" data-index="3" data-letter="" aria-label=""><span class="hex-letter"></span></button>
+        <button class="hex-tile flower-petal" style="--petal-angle: 180deg" data-index="4" data-letter="" aria-label=""><span class="hex-letter"></span></button>
+        <button class="hex-tile flower-petal" style="--petal-angle: 240deg" data-index="5" data-letter="" aria-label=""><span class="hex-letter"></span></button>
+        <button class="hex-tile flower-petal" style="--petal-angle: 300deg" data-index="6" data-letter="" aria-label=""><span class="hex-letter"></span></button>
+      </div>
+    </section>
+
+    <!-- Action buttons -->
+    <div class="action-buttons">
+      <button id="btn-delete" class="action-btn action-btn--secondary" aria-label="Delete last letter">
+        ← Delete
+      </button>
+      <button id="btn-shuffle" class="action-btn action-btn--ghost" aria-label="Shuffle letters">
+        ⟳ Shuffle
+      </button>
+      <button id="btn-enter" class="action-btn action-btn--primary" aria-label="Submit word">
+        Enter
+      </button>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
+    <!-- Score float -->
+    <div id="score-float" class="score-float"></div>
+
+  </div><!-- /.game-container -->
+
+  <!-- Modals -->
+  <div id="modal-how-to-play" class="modal" role="dialog" aria-modal="true" aria-labelledby="htp-title" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-how-to-play" aria-label="Close">✕</button>
+      <h2 id="htp-title">How to Play</h2>
+      <ul>
+        <li>Create words using the letters in the flower.</li>
+        <li>Every word must include the <strong>centre letter</strong>.</li>
+        <li>Words must be at least <strong>4 letters</strong> long.</li>
+        <li>Letters can be reused.</li>
+        <li>A <strong>Bloom</strong> word uses all 7 letters &mdash; bonus 7 points!</li>
+      </ul>
+      <h3>Scoring</h3>
+      <ul>
+        <li>4 letters = 1 point</li>
+        <li>5 letters = 5 points</li>
+        <li>6+ letters = 1 point per letter</li>
+        <li>Bloom = word score + 7 bonus</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="modal-stats" class="modal" role="dialog" aria-modal="true" aria-labelledby="stats-title" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-stats" aria-label="Close">✕</button>
+      <h2 id="stats-title">Your Garden</h2>
+      <div id="stats-content">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span id="stat-played" class="stat-value">0</span>
+            <span class="stat-label">Played</span>
+          </div>
+          <div class="stat-item">
+            <span id="stat-words" class="stat-value">0</span>
+            <span class="stat-label">Words Found</span>
+          </div>
+          <div class="stat-item">
+            <span id="stat-streak" class="stat-value">0</span>
+            <span class="stat-label">Streak</span>
+          </div>
+          <div class="stat-item">
+            <span id="stat-best-streak" class="stat-value">0</span>
+            <span class="stat-label">Best Streak</span>
+          </div>
+        </div>
+        <button id="btn-share" class="share-btn">Share Results</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-bloom-celebration" class="modal modal--bloom" role="dialog" aria-modal="true" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card modal-card--bloom">
+      <button class="modal-close" data-modal="modal-bloom-celebration" aria-label="Close">✕</button>
+      <div class="bloom-burst" aria-hidden="true"></div>
+      <h2>🌟 Bloom Word!</h2>
+      <p id="bloom-word-display" class="bloom-word-text"></p>
+      <button class="action-btn action-btn--primary" data-modal="modal-bloom-celebration">Keep Going!</button>
+    </div>
+  </div>
+
+  <script src="src/data/words.js"></script>
+  <script src="src/js/prng.js"></script>
+  <script src="src/js/scoring.js"></script>
+  <script src="src/js/puzzle.js"></script>
+  <script src="src/js/state.js"></script>
+  <script src="src/js/app.js"></script>
+</body>
+</html>
