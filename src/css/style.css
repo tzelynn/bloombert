@@ -250,11 +250,10 @@ body {
 /* Input display */
 .input-display {
   text-align: center;
-  min-height: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 0;
 }
 
 .input-text {
