@@ -56,7 +56,12 @@
     const saved = loadState(dateKey);
     if (saved) {
       foundWords = saved.foundWords instanceof Set ? saved.foundWords : new Set(saved.foundWords);
-      currentScore = saved.score || 0;
+      // Recalculate score from found words to pick up any scoring rule changes
+      currentScore = 0;
+      for (const w of foundWords) {
+        currentScore += scoreWord(w, puzzle.letters);
+      }
+      saveState(dateKey, { foundWords, score: currentScore });
     } else {
       foundWords = new Set();
       currentScore = 0;
