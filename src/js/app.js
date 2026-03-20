@@ -264,7 +264,67 @@
     $('stat-played').textContent = stats.gamesPlayed || 0;
     $('stat-words').textContent = stats.totalWords || 0;
     $('stat-streak').textContent = stats.currentStreak || 0;
-    $('stat-best-streak').textContent = stats.bestStreak || 0;
+    $('stat-best-streak').textContent = Math.max(stats.bestStreak || 0, stats.currentStreak || 0);
+    renderGardenGraph();
+  }
+
+  function renderGardenGraph() {
+    var container = $('garden-graph');
+    if (!container) return;
+    var data = getDailyWordCounts(dateKey, 7, foundWords.size);
+    var maxWords = Math.max.apply(null, data.map(function(d) { return d.words; }));
+    if (maxWords === 0) maxWords = 1;
+    var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var flowers = ['🌱','🌿','🌼','🌸','🌺','🌻','💐'];
+
+    container.innerHTML = '';
+    for (var i = 0; i < data.length; i++) {
+      var entry = data[i];
+      var pct = Math.round((entry.words / maxWords) * 100);
+      var isToday = entry.date === dateKey;
+      var dayDate = new Date(entry.date + 'T00:00:00');
+      var dayLabel = dayNames[dayDate.getDay()];
+
+      // Pick flower based on word count tier
+      var flowerIdx = entry.words === 0 ? 0 : Math.min(Math.floor((entry.words / maxWords) * (flowers.length - 1)) + 1, flowers.length - 1);
+      var flower = flowers[flowerIdx];
+
+      var col = document.createElement('div');
+      col.className = 'garden-col' + (isToday ? ' garden-col--today' : '');
+
+      var flowerEl = document.createElement('div');
+      flowerEl.className = 'garden-flower';
+      flowerEl.textContent = flower;
+
+      var stemWrap = document.createElement('div');
+      stemWrap.className = 'garden-stem-wrap';
+
+      var stem = document.createElement('div');
+      stem.className = 'garden-stem';
+      stem.style.height = (pct === 0 ? 4 : pct) + '%';
+
+      stemWrap.appendChild(stem);
+
+      var count = document.createElement('div');
+      count.className = 'garden-count';
+      count.textContent = entry.words;
+
+      var label = document.createElement('div');
+      label.className = 'garden-day';
+      label.textContent = dayLabel;
+
+      var dateParts = entry.date.split('-');
+      var dateLabel = document.createElement('div');
+      dateLabel.className = 'garden-date';
+      dateLabel.textContent = dateParts[2] + '/' + dateParts[1];
+
+      col.appendChild(flowerEl);
+      col.appendChild(stemWrap);
+      col.appendChild(count);
+      col.appendChild(label);
+      col.appendChild(dateLabel);
+      container.appendChild(col);
+    }
   }
 
   // --- Share ---
