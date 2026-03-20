@@ -45,7 +45,7 @@ Vanilla JS loaded via `<script>` tags in `index.html`. No modules, no imports �
 
 ## Scoring rules
 
-- 4 letters = 1 pt, 5 letters = 5 pts, 6+ letters = 1 pt per letter.
+- Every word scores 1 point per letter (e.g. 4 letters = 4 pts).
 - Bloom (uses all 7 letters) = word score + 7 bonus.
 - Puzzle must have ≥20 valid words, ≥1 bloom word, ≥50 total points.
 

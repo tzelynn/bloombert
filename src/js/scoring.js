@@ -1,9 +1,6 @@
 function scoreWord(word, letters) {
   const len = word.length;
-  let score;
-  if (len === 4) score = 1;
-  else if (len === 5) score = 5;
-  else score = len;
+  let score = len;
 
   if (isBloom(word, letters)) {
     score += 7;
@@ -25,11 +22,11 @@ function computeRankThresholds(totalScore) {
     Seedling: 0,
     Sprout: Math.ceil(totalScore * 0.02),
     Bud: Math.ceil(totalScore * 0.05),
-    Bloom: Math.ceil(totalScore * 0.10),
-    Petal: Math.ceil(totalScore * 0.25),
-    Sunflower: Math.ceil(totalScore * 0.45),
-    Bouquet: Math.ceil(totalScore * 0.70),
-    'Garden Master': totalScore,
+    Bloom: Math.ceil(totalScore * 0.08),
+    Petal: Math.ceil(totalScore * 0.15),
+    Sunflower: Math.ceil(totalScore * 0.25),
+    Bouquet: Math.ceil(totalScore * 0.40),
+    'Garden Master': Math.ceil(totalScore * 0.60),
   };
 }
 

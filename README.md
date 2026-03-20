@@ -33,9 +33,7 @@ npx serve .
 
 | Length | Points |
 |--------|--------|
-| 4 letters | 1 |
-| 5 letters | 5 |
-| 6+ letters | 1 per letter |
+| Any word | 1 per letter |
 | Bloom bonus | +7 |
 
 ### Ranks
@@ -47,27 +45,11 @@ npx serve .
 | 🌱 Seedling | 0% |
 | 🌿 Sprout | 2% |
 | 🌼 Bud | 5% |
-| 🌸 Bloom | 10% |
-| 🌺 Petal | 25% |
-| 🌻 Sunflower | 45% |
-| 💐 Bouquet | 70% |
-| 🌟 Garden Master | 100% |
-
-## Project Structure
-
-```
-bloombert/
-├── index.html         # Game page with honeycomb grid, modals, accessibility
-├── style.css          # Responsive styles, animations, botanical theme
-├── app.js             # UI controller — DOM bridge, input, events, modals
-├── puzzle.js          # Daily puzzle generation and word validation
-├── scoring.js         # Scoring, rank thresholds, share text
-├── prng.js            # Deterministic seeded PRNG (Mulberry32)
-├── state.js           # localStorage persistence and streak tracking
-├── words.js           # Generated word list (~85-95k words)
-├── prepare-words.js   # Node script to download and filter ENABLE word list
-└── README.md
-```
+| 🌸 Bloom | 8% |
+| 🌺 Petal | 15% |
+| 🌻 Sunflower | 25% |
+| 💐 Bouquet | 40% |
+| 🌟 Garden Master | 60% |
 
 ## Customisation
 
