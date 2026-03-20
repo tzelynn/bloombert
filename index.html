@@ -27,6 +27,7 @@
       <div class="logo">bloombert <span class="logo-flower">🌸</span></div>
       <div class="header-meta">
         <span id="streak-display" class="streak"></span>
+        <button id="btn-share-header" class="icon-btn" aria-label="Share results">📤</button>
         <button id="btn-stats" class="icon-btn" aria-label="Stats">📊</button>
         <button id="btn-how-to-play" class="icon-btn" aria-label="How to play">❓</button>
       </div>
@@ -55,7 +56,10 @@
       </div>
       <div class="found-count-row">
         <span id="found-count" class="found-count">0 words</span>
-        <span id="score-display" class="score-display">0 pts</span>
+        <span class="score-display-wrap">
+          <span id="score-display" class="score-display">0 pts</span>
+          <span id="score-float" class="score-float"></span>
+        </span>
       </div>
     </section>
 
@@ -94,8 +98,6 @@
     <!-- Toast notification -->
     <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
 
-    <!-- Score float -->
-    <div id="score-float" class="score-float"></div>
 
   </div><!-- /.game-container -->
 
@@ -118,6 +120,18 @@
         <li>5 letters = 5 points</li>
         <li>6+ letters = 1 point per letter</li>
         <li>Bloom = word score + 7 bonus</li>
+      </ul>
+      <h3>Ranks</h3>
+      <p>Earn a percentage of the puzzle's total possible score to rank up:</p>
+      <ul class="rank-list">
+        <li>🌱 Seedling &mdash; 0%</li>
+        <li>🌿 Sprout &mdash; 5%</li>
+        <li>🌼 Bud &mdash; 12%</li>
+        <li>🌸 Bloom &mdash; 25%</li>
+        <li>🌺 Petal &mdash; 40%</li>
+        <li>🌻 Sunflower &mdash; 60%</li>
+        <li>💐 Bouquet &mdash; 80%</li>
+        <li>🌟 Garden Master &mdash; 100%</li>
       </ul>
     </div>
   </div>
@@ -159,6 +173,17 @@
       <h2>🌟 Bloom Word!</h2>
       <p id="bloom-word-display" class="bloom-word-text"></p>
       <button class="action-btn action-btn--primary" data-modal="modal-bloom-celebration">Keep Going!</button>
+    </div>
+  </div>
+
+  <!-- Share modal -->
+  <div id="modal-share" class="modal" role="dialog" aria-modal="true" aria-labelledby="share-title" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card modal-card--share">
+      <button class="modal-close" data-modal="modal-share" aria-label="Close">✕</button>
+      <h2 id="share-title">🌷 Share Your Garden</h2>
+      <pre id="share-preview" class="share-preview"></pre>
+      <button id="btn-copy-share" class="share-btn">📋 Copy to Clipboard</button>
     </div>
   </div>
 

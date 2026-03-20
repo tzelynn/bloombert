@@ -447,28 +447,30 @@ body {
   pointer-events: auto;
 }
 
+/* Score display wrapper */
+.score-display-wrap {
+  position: relative;
+  display: inline-block;
+}
+
 /* Score float */
 .score-float {
-  position: fixed;
-  top: 50%;
+  position: absolute;
+  top: 100%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.3rem;
   font-weight: 600;
   color: var(--blue-sat);
   opacity: 0;
   pointer-events: none;
-  z-index: 90;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
 }
 
 .score-float--active {
-  animation: float-up 800ms ease forwards;
-}
-
-@keyframes float-up {
-  0% { opacity: 1; transform: translate(-50%, -50%); }
-  100% { opacity: 0; transform: translate(-50%, calc(-50% - 40px)); }
+  opacity: 1;
 }
 
 /* Modals */
@@ -596,6 +598,25 @@ body {
 .share-btn:hover { background: #4a93c4; }
 .share-btn:focus-visible { outline: 2px solid var(--blue-sat); outline-offset: 2px; }
 
+/* Share preview */
+.share-preview {
+  background: var(--cream);
+  border-radius: 12px;
+  padding: 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--charcoal);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.modal-card--share {
+  text-align: center;
+}
+
 /* Bloom celebration modal */
 .modal-card--bloom {
   text-align: center;
@@ -653,7 +674,7 @@ body {
 }
 
 .flash-success {
-  animation: flash-success 300ms ease;
+  animation: flash-success 1s ease;
 }
 
 @keyframes flash-success {
