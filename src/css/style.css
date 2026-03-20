@@ -189,12 +189,22 @@ body {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mint) transparent;
 }
 
 .found-words-list::-webkit-scrollbar {
-  display: none;
+  height: 4px;
+}
+
+.found-words-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.found-words-list::-webkit-scrollbar-thumb {
+  background: var(--mint);
+  border-radius: 4px;
 }
 
 .word-pill {
