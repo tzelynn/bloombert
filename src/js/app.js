@@ -65,9 +65,25 @@
     } else {
       foundWords = new Set();
       currentScore = 0;
+      saveState(dateKey, { foundWords, score: currentScore });
     }
 
     stats = loadStats();
+
+    // One-time fix: recalculate gamesPlayed from actual day states in localStorage
+    if (!stats.playedCountFixed) {
+      let actualPlayed = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('bloombert-state-')) {
+          actualPlayed++;
+        }
+      }
+      stats.gamesPlayed = actualPlayed;
+      stats.playedCountFixed = true;
+      saveStats(stats);
+    }
+
     if (!saved) {
       stats = checkAndUpdateStreak(stats, dateKey);
       stats.gamesPlayed += 1;
@@ -436,15 +452,22 @@
       });
     });
 
-    // Day rollover
+    // Day rollover — check on visibility change AND periodically
+    function checkDayRollover() {
+      const newKey = getTodaysDateKey();
+      if (newKey !== dateKey) {
+        location.reload();
+      }
+    }
+
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
-        const newKey = getTodaysDateKey();
-        if (newKey !== dateKey) {
-          location.reload();
-        }
+        checkDayRollover();
       }
     });
+
+    // Check every 60 seconds in case the tab stays open past midnight
+    setInterval(checkDayRollover, 60000);
   }
 
   // --- Start ---

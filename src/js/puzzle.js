@@ -20,7 +20,7 @@ function generatePuzzle(seed) {
   const rareConsonants = 'jkvwxyz'.split('');
 
   for (let attempt = 0; attempt < 1000; attempt++) {
-    const rng = createRNG(seed + attempt);
+    const rng = createRNG(seed * 2654435761 + attempt);
 
     // Weighted letter pool: vowels 3×, common consonants 2×, rare 1×
     const pool = [];
