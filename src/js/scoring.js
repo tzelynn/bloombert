@@ -25,13 +25,13 @@ function isBloom(word, letters) {
 function computeRankThresholds(totalScore) {
   return {
     Seedling: 0,
-    Sprout: Math.ceil(totalScore * 0.02),
-    Bud: Math.ceil(totalScore * 0.07),
-    Bloom: Math.ceil(totalScore * 0.15),
-    Petal: Math.ceil(totalScore * 0.30),
-    Sunflower: Math.ceil(totalScore * 0.50),
-    Bouquet: Math.ceil(totalScore * 0.65),
-    'Garden Master': Math.ceil(totalScore * 0.80),
+    Sprout: Math.ceil(totalScore * 0.10),
+    Bud: Math.ceil(totalScore * 0.20),
+    Bloom: Math.ceil(totalScore * 0.35),
+    Petal: Math.ceil(totalScore * 0.50),
+    Sunflower: Math.ceil(totalScore * 0.70),
+    Bouquet: Math.ceil(totalScore * 0.90),
+    'Garden Master': totalScore,
   };
 }
 

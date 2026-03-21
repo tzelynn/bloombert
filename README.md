@@ -44,13 +44,13 @@ npx serve .
 | Rank | % of Common Score |
 |------|-----------|
 | 🌱 Seedling | 0% |
-| 🌿 Sprout | 2% |
-| 🌼 Bud | 7% |
-| 🌸 Bloom | 15% |
-| 🌺 Petal | 30% |
-| 🌻 Sunflower | 50% |
-| 💐 Bouquet | 65% |
-| 🌟 Garden Master | 80% |
+| 🌿 Sprout | 10% |
+| 🌼 Bud | 20% |
+| 🌸 Bloom | 35% |
+| 🌺 Petal | 50% |
+| 🌻 Sunflower | 70% |
+| 💐 Bouquet | 90% |
+| 🌟 Garden Master | 100% |
 
 ## Customisation
 
