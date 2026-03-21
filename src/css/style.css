@@ -31,7 +31,6 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   position: relative;
-  overflow-y: hidden;
 }
 
 /* Background petals */

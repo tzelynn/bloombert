@@ -97,6 +97,11 @@
           } catch (e) {}
         }
       }
+      // Also count today if words were already found
+      if (foundWords.size > 0) {
+        actualPlayed++;
+        actualWords += foundWords.size;
+      }
       stats.gamesPlayed = actualPlayed;
       stats.totalWords = actualWords;
       stats.playedCountFixed = true;
