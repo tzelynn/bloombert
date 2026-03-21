@@ -61,7 +61,10 @@
         <!-- Word pills injected here by app.js -->
       </div>
       <div class="found-count-row">
-        <span id="found-count" class="found-count">0 words</span>
+        <span class="found-count-left">
+          <span id="found-count" class="found-count">0 words</span>
+          <button id="btn-view-all" class="view-all-btn" hidden>View All</button>
+        </span>
         <span class="score-display-wrap">
           <span id="score-display" class="score-display">0 pts</span>
           <span id="score-float" class="score-float"></span>
@@ -127,18 +130,19 @@
       <ul>
         <li>Each word scores its letter count (e.g. 4 letters = 4 pts, 6 letters = 6 pts)</li>
         <li>Bloom = word score + 7 bonus</li>
+        <li><strong>Bonus words:</strong> rare bonus words still count for points, but you don't need them to reach Garden Master!</li>
       </ul>
       <h3>Ranks</h3>
-      <p>Earn a percentage of the puzzle's total possible score to rank up:</p>
+      <p>Earn a percentage of the common words' total score to rank up:</p>
       <ul class="rank-list">
         <li>🌱 Seedling &mdash; 0%</li>
-        <li>🌿 Sprout &mdash; 2%</li>
-        <li>🌼 Bud &mdash; 5%</li>
-        <li>🌸 Bloom &mdash; 8%</li>
-        <li>🌺 Petal &mdash; 15%</li>
-        <li>🌻 Sunflower &mdash; 25%</li>
-        <li>💐 Bouquet &mdash; 40%</li>
-        <li>🌟 Garden Master &mdash; 60%</li>
+        <li>🌿 Sprout &mdash; 10%</li>
+        <li>🌼 Bud &mdash; 20%</li>
+        <li>🌸 Bloom &mdash; 35%</li>
+        <li>🌺 Petal &mdash; 50%</li>
+        <li>🌻 Sunflower &mdash; 70%</li>
+        <li>💐 Bouquet &mdash; 90%</li>
+        <li>🌟 Garden Master &mdash; 100%</li>
       </ul>
     </div>
   </div>
@@ -182,10 +186,22 @@
     <div class="modal-backdrop"></div>
     <div class="modal-card modal-card--bloom">
       <button class="modal-close" data-modal="modal-bloom-celebration" aria-label="Close">✕</button>
+      <div class="bloom-petals" aria-hidden="true">
+        <span class="bloom-petal bloom-petal-1">🌸</span>
+        <span class="bloom-petal bloom-petal-2">🌼</span>
+        <span class="bloom-petal bloom-petal-3">🌿</span>
+        <span class="bloom-petal bloom-petal-4">🌸</span>
+        <span class="bloom-petal bloom-petal-5">🌺</span>
+        <span class="bloom-petal bloom-petal-6">🌼</span>
+      </div>
       <div class="bloom-burst" aria-hidden="true"></div>
-      <h2>🌟 Bloom Word!</h2>
-      <p id="bloom-word-display" class="bloom-word-text"></p>
-      <button class="action-btn action-btn--primary" data-modal="modal-bloom-celebration">Keep Going!</button>
+      <div class="bloom-content">
+        <div class="bloom-icon">✨</div>
+        <h2 class="bloom-title">Bloom!</h2>
+        <p class="bloom-subtitle">You used all 7 letters</p>
+        <p id="bloom-word-display" class="bloom-word-text"></p>
+        <button class="action-btn action-btn--primary" data-modal="modal-bloom-celebration">Keep Going!</button>
+      </div>
     </div>
   </div>
 
@@ -200,6 +216,16 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
         Copy to Clipboard
       </button>
+    </div>
+  </div>
+
+  <!-- View all words modal -->
+  <div id="modal-all-words" class="modal" role="dialog" aria-modal="true" aria-labelledby="all-words-title" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-all-words" aria-label="Close">✕</button>
+      <h2 id="all-words-title">Found Words</h2>
+      <div id="all-words-content" class="all-words-content"></div>
     </div>
   </div>
 

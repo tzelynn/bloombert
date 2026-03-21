@@ -6,6 +6,7 @@
   let currentInput = '';
   let foundWords = new Set();
   let currentScore = 0;
+  let bonusCount = 0;
   let thresholds = {};
   let dateKey = '';
   let stats = {};
@@ -45,50 +46,65 @@
   const modalShare = $('modal-share');
   const sharePreview = $('share-preview');
   const btnCopyShare = $('btn-copy-share');
+  const btnViewAll = $('btn-view-all');
+  const modalAllWords = $('modal-all-words');
+  const allWordsContent = $('all-words-content');
 
   // --- Init ---
   function init() {
     dateKey = getTodaysDateKey();
     const seed = getTodaysSeed();
     puzzle = generatePuzzle(seed);
-    thresholds = computeRankThresholds(puzzle.totalScore);
+    thresholds = computeRankThresholds(puzzle.commonScore);
 
     const saved = loadState(dateKey);
     if (saved) {
       foundWords = saved.foundWords instanceof Set ? saved.foundWords : new Set(saved.foundWords);
       // Recalculate score from found words to pick up any scoring rule changes
       currentScore = 0;
+      bonusCount = 0;
       for (const w of foundWords) {
-        currentScore += scoreWord(w, puzzle.letters);
+        const wb = !COMMON_WORDS.has(w);
+        currentScore += scoreWord(w, puzzle.letters, wb);
+        if (wb) bonusCount++;
       }
       saveState(dateKey, { foundWords, score: currentScore });
     } else {
       foundWords = new Set();
       currentScore = 0;
+      bonusCount = 0;
       saveState(dateKey, { foundWords, score: currentScore });
     }
 
     stats = loadStats();
 
-    // One-time fix: recalculate gamesPlayed from actual day states in localStorage
-    if (!stats.playedCountFixed) {
+    // One-time fix: recalculate gamesPlayed and totalWords from actual day states
+    if (!stats.wordCountFixed) {
       let actualPlayed = 0;
+      let actualWords = 0;
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('bloombert-state-')) {
-          actualPlayed++;
+        if (k && k.startsWith('bloombert-state-') && k !== `bloombert-state-${dateKey}`) {
+          try {
+            const s = JSON.parse(localStorage.getItem(k));
+            if (s && s.foundWords) {
+              const wc = Array.isArray(s.foundWords) ? s.foundWords.length : 0;
+              if (wc > 0) {
+                actualPlayed++;
+                actualWords += wc;
+              }
+            }
+          } catch (e) {}
         }
       }
       stats.gamesPlayed = actualPlayed;
+      stats.totalWords = actualWords;
       stats.playedCountFixed = true;
+      stats.wordCountFixed = true;
       saveStats(stats);
     }
 
-    if (!saved) {
-      stats = checkAndUpdateStreak(stats, dateKey);
-      stats.gamesPlayed += 1;
-      saveStats(stats);
-    }
+    // gamesPlayed and streak are updated on first valid word, not on page load
 
     // Display metadata
     difficultyBadge.textContent = puzzle.difficulty;
@@ -121,22 +137,73 @@
   }
 
   function renderFoundWords() {
-    const sorted = [...foundWords].sort();
+    const sorted = [...foundWords].reverse();
     foundWordsList.innerHTML = '';
     for (const word of sorted) {
       const pill = document.createElement('span');
       pill.className = 'word-pill pop-in';
       pill.setAttribute('role', 'listitem');
+      const isBonus = !COMMON_WORDS.has(word);
       if (isBloom(word, puzzle.letters)) {
         pill.classList.add('word-pill--bloom');
         pill.textContent = '✨ ' + word;
+      } else if (isBonus) {
+        pill.classList.add('word-pill--bonus');
+        pill.textContent = word;
       } else {
         pill.textContent = word;
       }
       foundWordsList.appendChild(pill);
     }
-    foundCount.textContent = `${foundWords.size} word${foundWords.size !== 1 ? 's' : ''}`;
+    const commonFound = foundWords.size - bonusCount;
+    let countText = `${commonFound} word${commonFound !== 1 ? 's' : ''}`;
+    if (bonusCount > 0) {
+      countText += ` + ${bonusCount} bonus`;
+    }
+    foundCount.textContent = countText;
     scoreDisplay.textContent = `${currentScore} pts`;
+    foundWordsList.scrollLeft = 0;
+    if (btnViewAll) btnViewAll.hidden = foundWords.size < 4;
+  }
+
+  function renderAllWordsModal() {
+    if (!allWordsContent) return;
+    const wordsByLength = {};
+    for (const word of foundWords) {
+      const len = word.length;
+      if (!wordsByLength[len]) wordsByLength[len] = [];
+      wordsByLength[len].push(word);
+    }
+    const lengths = Object.keys(wordsByLength).map(Number).sort((a, b) => b - a);
+    allWordsContent.innerHTML = '';
+    for (const len of lengths) {
+      const words = wordsByLength[len].sort();
+      const group = document.createElement('div');
+      group.className = 'all-words-group';
+      const title = document.createElement('div');
+      title.className = 'all-words-group-title';
+      title.textContent = len + ' letters (' + words.length + ')';
+      group.appendChild(title);
+      const list = document.createElement('div');
+      list.className = 'all-words-group-list';
+      for (const word of words) {
+        const pill = document.createElement('span');
+        pill.className = 'word-pill';
+        const isBonus = !COMMON_WORDS.has(word);
+        if (isBloom(word, puzzle.letters)) {
+          pill.classList.add('word-pill--bloom');
+          pill.textContent = '✨ ' + word;
+        } else if (isBonus) {
+          pill.classList.add('word-pill--bonus');
+          pill.textContent = word;
+        } else {
+          pill.textContent = word;
+        }
+        list.appendChild(pill);
+      }
+      group.appendChild(list);
+      allWordsContent.appendChild(group);
+    }
   }
 
   function renderRankBar() {
@@ -196,14 +263,21 @@
 
     // Valid word
     const prevRank = getRank(currentScore, thresholds).name;
-    const points = scoreWord(word, puzzle.letters);
+    const isBonus = !COMMON_WORDS.has(word);
+    const points = scoreWord(word, puzzle.letters, isBonus);
     const bloom = isBloom(word, puzzle.letters);
 
     foundWords.add(word);
     currentScore += points;
+    if (isBonus) bonusCount++;
 
     saveState(dateKey, { foundWords, score: currentScore });
 
+    // Count this day as played on first valid word
+    if (foundWords.size === 1) {
+      stats = checkAndUpdateStreak(stats, dateKey);
+      stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+    }
     stats.totalWords = (stats.totalWords || 0) + 1;
     saveStats(stats);
 
@@ -211,7 +285,7 @@
     renderRankBar();
     clearInput();
 
-    showScoreFloat(`+${points}`);
+    showScoreFloat(isBonus ? `+${points} bonus` : `+${points}`);
     document.dispatchEvent(new CustomEvent('Bloombert:success', { detail: { word, points } }));
 
     // Flash success on hex tiles
@@ -223,12 +297,17 @@
     const newRank = getRank(currentScore, thresholds).name;
     if (newRank !== prevRank) {
       document.dispatchEvent(new CustomEvent('Bloombert:rankup', { detail: { rank: newRank } }));
-      const rankInfo = getRank(currentScore, thresholds);
-      showToast(`${rankInfo.emoji} ${rankInfo.name}!`);
       const rankSection = document.querySelector('.rank-section');
       if (rankSection) {
-        rankSection.classList.add('rankup-shimmer');
-        rankSection.addEventListener('animationend', () => rankSection.classList.remove('rankup-shimmer'), { once: true });
+        rankSection.classList.remove('rankup-celebrate');
+        void rankSection.offsetWidth;
+        rankSection.classList.add('rankup-celebrate');
+        rankSection.addEventListener('animationend', function handler(e) {
+          if (e.target === rankSection) {
+            rankSection.classList.remove('rankup-celebrate');
+            rankSection.removeEventListener('animationend', handler);
+          }
+        });
       }
     }
 
@@ -352,7 +431,8 @@
   function getShareText() {
     const rank = getRank(currentScore, thresholds);
     const bloomCount = [...foundWords].filter(w => isBloom(w, puzzle.letters)).length;
-    return formatShareText(dateKey, rank, foundWords.size, puzzle.validWords.length, currentScore, bloomCount);
+    const commonFound = foundWords.size - bonusCount;
+    return formatShareText(dateKey, rank, commonFound, puzzle.commonWords.length, currentScore, bloomCount, bonusCount);
   }
 
   function shareResults() {
@@ -437,6 +517,10 @@
     if (btnShare) btnShare.addEventListener('click', shareResults);
     if (btnShareHeader) btnShareHeader.addEventListener('click', shareResults);
     if (btnCopyShare) btnCopyShare.addEventListener('click', copyShareText);
+    if (btnViewAll) btnViewAll.addEventListener('click', function() {
+      renderAllWordsModal();
+      openModal(modalAllWords);
+    });
 
     // Modal close — backdrop, X button, and data-modal buttons
     document.querySelectorAll('.modal').forEach((modal) => {

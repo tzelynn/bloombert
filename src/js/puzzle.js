@@ -44,24 +44,30 @@ function generatePuzzle(seed) {
     if ('qxz'.includes(keyLetter)) continue;
 
     const validWords = getAllValidWords(letters, keyLetter);
+    const commonWords = validWords.filter(w => COMMON_WORDS.has(w));
+    const bonusWords = validWords.filter(w => !COMMON_WORDS.has(w));
 
-    if (validWords.length < 20) continue;
+    if (commonWords.length < 15) continue;
 
+    let commonScore = 0;
     let totalScore = 0;
     let hasBloom = false;
     for (const word of validWords) {
-      totalScore += scoreWord(word, letters);
+      const bonus = !COMMON_WORDS.has(word);
+      const pts = scoreWord(word, letters, bonus);
+      totalScore += pts;
+      if (!bonus) commonScore += pts;
       if (isBloom(word, letters)) hasBloom = true;
     }
 
     if (!hasBloom) continue;
-    if (totalScore < 50) continue;
+    if (commonScore < 40) continue;
 
-    // Difficulty: Easy requires BOTH conditions, Hard requires EITHER
+    // Difficulty based on common words (the reachable pool)
     let difficulty;
-    if (validWords.length > 50 && totalScore > 150) {
+    if (commonWords.length > 40 && commonScore > 120) {
       difficulty = 'Easy';
-    } else if (validWords.length < 30 || totalScore < 80) {
+    } else if (commonWords.length < 25 || commonScore < 60) {
       difficulty = 'Hard';
     } else {
       difficulty = 'Medium';
@@ -71,6 +77,9 @@ function generatePuzzle(seed) {
       letters,
       keyLetter,
       validWords,
+      commonWords,
+      bonusWords,
+      commonScore,
       totalScore,
       hasBloom,
       difficulty,
