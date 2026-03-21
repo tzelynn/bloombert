@@ -27,29 +27,30 @@ npx serve .
 - Every valid word must contain the **centre letter** and use only the 7 given letters
 - Words must be **4+ letters** long (letters can be reused)
 - A **Bloom** word uses all 7 unique letters for a +7 point bonus
-- Puzzles are validated to have ≥20 valid words, ≥1 Bloom word, and ≥50 total points
+- Puzzles are validated to have ≥15 common words, ≥1 Bloom word, and ≥40 common score
 
 ### Scoring
 
-| Length | Points |
+| Type | Points |
 |--------|--------|
-| Any word | 1 per letter |
+| Common word | 1 per letter |
+| Bonus word (obscure) | half points (rounded down) |
 | Bloom bonus | +7 |
 
 ### Ranks
 
-8 tiers based on percentage of the puzzle's total possible score:
+8 tiers based on percentage of the common words' total score:
 
-| Rank | % of Total |
+| Rank | % of Common Score |
 |------|-----------|
 | 🌱 Seedling | 0% |
 | 🌿 Sprout | 2% |
-| 🌼 Bud | 5% |
-| 🌸 Bloom | 8% |
-| 🌺 Petal | 15% |
-| 🌻 Sunflower | 25% |
-| 💐 Bouquet | 40% |
-| 🌟 Garden Master | 60% |
+| 🌼 Bud | 7% |
+| 🌸 Bloom | 15% |
+| 🌺 Petal | 30% |
+| 🌻 Sunflower | 50% |
+| 💐 Bouquet | 65% |
+| 🌟 Garden Master | 80% |
 
 ## Customisation
 

@@ -6,6 +6,7 @@
   let currentInput = '';
   let foundWords = new Set();
   let currentScore = 0;
+  let bonusCount = 0;
   let thresholds = {};
   let dateKey = '';
   let stats = {};
@@ -51,20 +52,24 @@
     dateKey = getTodaysDateKey();
     const seed = getTodaysSeed();
     puzzle = generatePuzzle(seed);
-    thresholds = computeRankThresholds(puzzle.totalScore);
+    thresholds = computeRankThresholds(puzzle.commonScore);
 
     const saved = loadState(dateKey);
     if (saved) {
       foundWords = saved.foundWords instanceof Set ? saved.foundWords : new Set(saved.foundWords);
       // Recalculate score from found words to pick up any scoring rule changes
       currentScore = 0;
+      bonusCount = 0;
       for (const w of foundWords) {
-        currentScore += scoreWord(w, puzzle.letters);
+        const wb = !COMMON_WORDS.has(w);
+        currentScore += scoreWord(w, puzzle.letters, wb);
+        if (wb) bonusCount++;
       }
       saveState(dateKey, { foundWords, score: currentScore });
     } else {
       foundWords = new Set();
       currentScore = 0;
+      bonusCount = 0;
       saveState(dateKey, { foundWords, score: currentScore });
     }
 
@@ -127,15 +132,24 @@
       const pill = document.createElement('span');
       pill.className = 'word-pill pop-in';
       pill.setAttribute('role', 'listitem');
+      const isBonus = !COMMON_WORDS.has(word);
       if (isBloom(word, puzzle.letters)) {
         pill.classList.add('word-pill--bloom');
         pill.textContent = '✨ ' + word;
+      } else if (isBonus) {
+        pill.classList.add('word-pill--bonus');
+        pill.textContent = word;
       } else {
         pill.textContent = word;
       }
       foundWordsList.appendChild(pill);
     }
-    foundCount.textContent = `${foundWords.size} word${foundWords.size !== 1 ? 's' : ''}`;
+    const commonFound = foundWords.size - bonusCount;
+    let countText = `${commonFound} word${commonFound !== 1 ? 's' : ''}`;
+    if (bonusCount > 0) {
+      countText += ` + ${bonusCount} bonus`;
+    }
+    foundCount.textContent = countText;
     scoreDisplay.textContent = `${currentScore} pts`;
   }
 
@@ -196,11 +210,13 @@
 
     // Valid word
     const prevRank = getRank(currentScore, thresholds).name;
-    const points = scoreWord(word, puzzle.letters);
+    const isBonus = !COMMON_WORDS.has(word);
+    const points = scoreWord(word, puzzle.letters, isBonus);
     const bloom = isBloom(word, puzzle.letters);
 
     foundWords.add(word);
     currentScore += points;
+    if (isBonus) bonusCount++;
 
     saveState(dateKey, { foundWords, score: currentScore });
 
@@ -211,7 +227,7 @@
     renderRankBar();
     clearInput();
 
-    showScoreFloat(`+${points}`);
+    showScoreFloat(isBonus ? `+${points} bonus` : `+${points}`);
     document.dispatchEvent(new CustomEvent('Bloombert:success', { detail: { word, points } }));
 
     // Flash success on hex tiles
@@ -352,7 +368,8 @@
   function getShareText() {
     const rank = getRank(currentScore, thresholds);
     const bloomCount = [...foundWords].filter(w => isBloom(w, puzzle.letters)).length;
-    return formatShareText(dateKey, rank, foundWords.size, puzzle.validWords.length, currentScore, bloomCount);
+    const commonFound = foundWords.size - bonusCount;
+    return formatShareText(dateKey, rank, commonFound, puzzle.commonWords.length, currentScore, bloomCount, bonusCount);
   }
 
   function shareResults() {

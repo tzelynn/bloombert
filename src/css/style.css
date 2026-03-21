@@ -31,6 +31,7 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   position: relative;
+  overflow-y: hidden;
 }
 
 /* Background petals */
@@ -57,9 +58,12 @@ body {
 .game-container {
   max-width: 480px;
   margin: 0 auto;
-  padding: 0 16px 32px;
+  padding: 0 16px;
   position: relative;
   z-index: 1;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header */
@@ -68,6 +72,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 0;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -117,6 +122,7 @@ body {
   padding: 8px 0;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .rank-badge {
@@ -186,6 +192,7 @@ body {
 /* Found words section */
 .found-section {
   padding: 12px 0;
+  flex-shrink: 0;
 }
 
 .found-words-list {
@@ -227,6 +234,12 @@ body {
   color: #7A6420;
 }
 
+.word-pill--bonus {
+  background: var(--cream-dark);
+  color: var(--warm-grey);
+  border: 1px dashed #ccc;
+}
+
 .found-count-row {
   display: flex;
   justify-content: space-between;
@@ -254,6 +267,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .input-text {
@@ -281,6 +295,11 @@ body {
 /* Flower grid */
 .hex-grid-section {
   padding: 8px 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
 }
 
 .flower-grid {
@@ -288,6 +307,7 @@ body {
   width: 280px;
   height: 280px;
   margin: 0 auto;
+  flex-shrink: 1;
 }
 
 /* Shared tile base */
@@ -394,6 +414,7 @@ body {
   gap: 12px;
   justify-content: center;
   padding: 16px 0;
+  flex-shrink: 0;
 }
 
 .action-btn {
@@ -827,6 +848,10 @@ body {
 
 /* Desktop */
 @media (min-width: 640px) {
+  body {
+    overflow-y: auto;
+  }
+
   .flower-grid {
     width: 340px;
     height: 340px;
@@ -849,6 +874,7 @@ body {
 
   .game-container {
     padding: 0 24px 40px;
+    height: auto;
   }
 
   .modal-card {

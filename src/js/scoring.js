@@ -1,10 +1,15 @@
-function scoreWord(word, letters) {
+function scoreWord(word, letters, isBonus) {
   const len = word.length;
   let score = len;
 
   if (isBloom(word, letters)) {
     score += 7;
   }
+
+  if (isBonus) {
+    score = Math.floor(score / 2);
+  }
+
   return score;
 }
 
@@ -21,12 +26,12 @@ function computeRankThresholds(totalScore) {
   return {
     Seedling: 0,
     Sprout: Math.ceil(totalScore * 0.02),
-    Bud: Math.ceil(totalScore * 0.05),
-    Bloom: Math.ceil(totalScore * 0.08),
-    Petal: Math.ceil(totalScore * 0.15),
-    Sunflower: Math.ceil(totalScore * 0.25),
-    Bouquet: Math.ceil(totalScore * 0.40),
-    'Garden Master': Math.ceil(totalScore * 0.60),
+    Bud: Math.ceil(totalScore * 0.07),
+    Bloom: Math.ceil(totalScore * 0.15),
+    Petal: Math.ceil(totalScore * 0.30),
+    Sunflower: Math.ceil(totalScore * 0.50),
+    Bouquet: Math.ceil(totalScore * 0.65),
+    'Garden Master': Math.ceil(totalScore * 0.80),
   };
 }
 
@@ -66,7 +71,7 @@ function getRank(currentScore, thresholds) {
   };
 }
 
-function formatShareText(date, rank, foundCount, totalCount, score, bloomCount) {
+function formatShareText(date, rank, foundCount, totalCount, score, bloomCount, bonusCount) {
   var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var parts = date.split('-');
   var prettyDate = months[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10) + ', ' + parts[0];
@@ -80,15 +85,20 @@ function formatShareText(date, rank, foundCount, totalCount, score, bloomCount) 
     bar += i < filled ? '🌸' : '🤍';
   }
 
+  var wordLine = foundCount + ' words found';
+  if (bonusCount > 0) {
+    wordLine += ' + ' + bonusCount + ' bonus';
+  }
+
   var lines = [
     '🌷 Bloombert · ' + prettyDate,
     rank.emoji + ' ' + rank.name + ' · ' + score + ' pts',
     bar,
-    foundCount + ' words found',
+    wordLine,
   ];
 
   if (bloomCount > 0) {
-    lines[3] += ' · ✨ ' + bloomCount + ' bloom' + (bloomCount > 1 ? 's' : '');
+    lines.push('✨ ' + bloomCount + ' bloom' + (bloomCount > 1 ? 's' : ''));
   }
 
   lines.push('');
