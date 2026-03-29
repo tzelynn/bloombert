@@ -10,6 +10,7 @@
   let thresholds = {};
   let dateKey = '';
   let stats = {};
+  let hintsUsed = { revealedWords: [], selectedTwoLetterKey: null };
 
   // --- Icon SVGs ---
   const ICON_CLIPBOARD = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
@@ -49,6 +50,9 @@
   const btnViewAll = $('btn-view-all');
   const modalAllWords = $('modal-all-words');
   const allWordsContent = $('all-words-content');
+  const btnHints = $('btn-hints');
+  const btnHintsInline = $('btn-hints-inline');
+  const modalHints = $('modal-hints');
 
   // --- Init ---
   function init() {
@@ -68,12 +72,14 @@
         currentScore += scoreWord(w, puzzle.letters, wb);
         if (wb) bonusCount++;
       }
-      saveState(dateKey, { foundWords, score: currentScore });
+      hintsUsed = saved.hintsUsed || { revealedWords: [], selectedTwoLetterKey: null };
+      saveState(dateKey, { foundWords, score: currentScore, hintsUsed });
     } else {
       foundWords = new Set();
       currentScore = 0;
       bonusCount = 0;
-      saveState(dateKey, { foundWords, score: currentScore });
+      hintsUsed = { revealedWords: [] };
+      saveState(dateKey, { foundWords, score: currentScore, hintsUsed });
     }
 
     stats = loadStats();
@@ -121,6 +127,7 @@
     renderRankBar();
     renderInput();
     bindEvents();
+    updateHintNotification();
   }
 
   function formatDate(key) {
@@ -276,7 +283,7 @@
     currentScore += points;
     if (isBonus) bonusCount++;
 
-    saveState(dateKey, { foundWords, score: currentScore });
+    saveState(dateKey, { foundWords, score: currentScore, hintsUsed });
 
     // Count this day as played on first valid word
     if (foundWords.size === 1) {
@@ -289,6 +296,7 @@
     renderFoundWords();
     renderRankBar();
     clearInput();
+    if (modalHints && !modalHints.hidden) renderHintsModal();
 
     showScoreFloat(isBonus ? `+${points} bonus` : `+${points}`);
     document.dispatchEvent(new CustomEvent('Bloombert:success', { detail: { word, points } }));
@@ -314,6 +322,11 @@
           }
         });
       }
+      var newRankIdx = RANK_ORDER.indexOf(newRank);
+      if (HINT_UNLOCK_RANKS.indexOf(newRankIdx) !== -1) {
+        setTimeout(function() { showToast('💡 New hint unlocked!'); }, 600);
+      }
+      updateHintNotification();
     }
 
     if (bloom) {
@@ -331,7 +344,16 @@
       [outer[i], outer[j]] = [outer[j], outer[i]];
     }
     puzzle.letters = [puzzle.letters[0], ...outer];
-    renderHexGrid();
+
+    var petals = hexGrid.querySelectorAll('.flower-petal');
+    petals.forEach(function (p) {
+      p.classList.remove('shuffling');
+      void p.offsetWidth;
+      p.classList.add('shuffling');
+    });
+
+    // Swap letters while petals overlap at center
+    setTimeout(renderHexGrid, 140);
   }
 
   // --- Toast ---
@@ -480,6 +502,265 @@
     document.body.removeChild(ta);
   }
 
+  // --- Hints ---
+  const RANK_ORDER = ['Seedling', 'Sprout', 'Bud', 'Bloom', 'Petal', 'Sunflower', 'Bouquet', 'Garden Master'];
+  var HINT_UNLOCK_RANKS = [1, 3, 4, 5, 6]; // Sprout, Bloom, Petal, Sunflower, Bouquet
+
+  function getCurrentRankIndex() {
+    return RANK_ORDER.indexOf(getRank(currentScore, thresholds).name);
+  }
+
+  function hasUnseenHints() {
+    var seen = hintsUsed.lastSeenRankIdx != null ? hintsUsed.lastSeenRankIdx : -1;
+    var current = getCurrentRankIndex();
+    return HINT_UNLOCK_RANKS.some(function(r) { return r > seen && r <= current; });
+  }
+
+  function updateHintNotification() {
+    var show = hasUnseenHints();
+    if (btnHints) btnHints.classList.toggle('hint-notify', show);
+    if (btnHintsInline) btnHintsInline.classList.toggle('hint-notify', show);
+  }
+
+  function openHintsModal() {
+    renderHintsModal();
+    hintsUsed.lastSeenRankIdx = getCurrentRankIndex();
+    saveState(dateKey, { foundWords, score: currentScore, hintsUsed });
+    updateHintNotification();
+    openModal(modalHints);
+  }
+
+  function computeWordLengthGrid() {
+    var buckets = {};
+    for (var i = 0; i < puzzle.commonWords.length; i++) {
+      var w = puzzle.commonWords[i];
+      var len = w.length;
+      if (!buckets[len]) buckets[len] = { total: 0, found: 0 };
+      buckets[len].total++;
+      if (foundWords.has(w)) buckets[len].found++;
+    }
+    return Object.keys(buckets).map(Number).sort(function(a, b) { return a - b; }).map(function(len) {
+      return { length: len, found: buckets[len].found, total: buckets[len].total };
+    });
+  }
+
+  function computeOneLetterList() {
+    var groups = {};
+    for (var i = 0; i < puzzle.commonWords.length; i++) {
+      var w = puzzle.commonWords[i];
+      var letter = w[0].toUpperCase();
+      if (!groups[letter]) groups[letter] = { total: 0, remaining: 0 };
+      groups[letter].total++;
+      if (!foundWords.has(w)) groups[letter].remaining++;
+    }
+    return Object.keys(groups).sort().map(function(letter) {
+      return { letter: letter, remaining: groups[letter].remaining, total: groups[letter].total };
+    });
+  }
+
+
+  function getNextRevealWord() {
+    var unfound = puzzle.commonWords
+      .filter(function(w) { return !foundWords.has(w); })
+      .sort(function(a, b) { return a.length - b.length || a.localeCompare(b); });
+    return unfound.length > 0 ? unfound[0] : null;
+  }
+
+  function renderHintsModal() {
+    var rankIdx = getCurrentRankIndex();
+    // TODO: remove testing override — forces all hints unlocked
+    var testUnlockAll = false;  // unlock all hints toggle
+    var effectiveIdx = testUnlockAll ? 6 : rankIdx;
+    document.querySelectorAll('.hint-section').forEach(function(section) {
+      var requiredIdx = parseInt(section.dataset.unlockRank, 10);
+      var unlocked = effectiveIdx >= requiredIdx;
+      var lockedEl = section.querySelector('.hint-locked');
+      var contentEl = section.querySelector('.hint-content');
+      lockedEl.hidden = unlocked;
+      contentEl.hidden = !unlocked;
+    });
+    if (effectiveIdx >= 1) renderLengthGrid();
+    if (effectiveIdx >= 3) renderOneLetterList();
+    if (effectiveIdx >= 4) renderRevealSection(0);
+    if (effectiveIdx >= 5) renderTwoLetterPicker();
+    if (effectiveIdx >= 6) renderRevealSection(1);
+  }
+
+  function renderLengthGrid() {
+    var tbody = $('hint-grid-tbody');
+    var data = computeWordLengthGrid();
+    tbody.innerHTML = '';
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      var remaining = row.total - row.found;
+      var tr = document.createElement('tr');
+      if (remaining === 0) tr.classList.add('hint-row--complete');
+      tr.innerHTML = '<td>' + row.length + '</td><td>' + remaining + '</td>';
+      tbody.appendChild(tr);
+    }
+  }
+
+  function renderOneLetterList() {
+    var tbody = $('hint-one-letter-tbody');
+    var data = computeOneLetterList();
+    tbody.innerHTML = '';
+    var allDone = data.every(function(d) { return d.remaining === 0; });
+    if (allDone) {
+      tbody.innerHTML = '<tr><td colspan="2" class="hint-all-found">All common words found!</td></tr>';
+      return;
+    }
+    for (var i = 0; i < data.length; i++) {
+      var tr = document.createElement('tr');
+      if (data[i].remaining === 0) tr.classList.add('hint-row--complete');
+      tr.innerHTML = '<td>' + data[i].letter + '</td><td>' + data[i].remaining + '</td>';
+      tbody.appendChild(tr);
+    }
+  }
+
+  function computeTwoLetterWordsByLetter() {
+    var groups = {};
+    for (var i = 0; i < puzzle.commonWords.length; i++) {
+      var w = puzzle.commonWords[i];
+      var letter = w[0].toUpperCase();
+      if (!groups[letter]) groups[letter] = [];
+      groups[letter].push(w);
+    }
+    return groups;
+  }
+
+  function renderTwoLetterPicker() {
+    var picker = $('hint-two-letter-picker');
+    var wordsContainer = $('hint-two-letter-words');
+    var groups = computeTwoLetterWordsByLetter();
+    var letters = Object.keys(groups).sort();
+    var selected = hintsUsed.selectedTwoLetterKey;
+
+    picker.innerHTML = '';
+    for (var i = 0; i < letters.length; i++) {
+      var letter = letters[i];
+      var unfound = groups[letter].filter(function(w) { return !foundWords.has(w); });
+      var btn = document.createElement('button');
+      btn.className = 'hint-picker-btn';
+      btn.dataset.letter = letter;
+      if (selected === letter) {
+        btn.classList.add('hint-picker-btn--active');
+        btn.textContent = letter;
+      } else if (selected) {
+        btn.classList.add('hint-picker-btn--locked');
+        btn.textContent = letter;
+        btn.disabled = true;
+      } else if (unfound.length === 0) {
+        btn.classList.add('hint-picker-btn--done');
+        btn.textContent = letter;
+      } else {
+        btn.textContent = letter;
+      }
+      picker.appendChild(btn);
+    }
+
+    wordsContainer.innerHTML = '';
+    if (selected && groups[selected]) {
+      var unfound = groups[selected].filter(function(w) { return !foundWords.has(w); });
+      if (unfound.length === 0) {
+        wordsContainer.innerHTML = '<p class="hint-all-found">All "' + selected + '" words found! 🌸</p>';
+      } else {
+        unfound.sort(function(a, b) { return a.length - b.length || a.localeCompare(b); });
+        for (var j = 0; j < unfound.length; j++) {
+          var w = unfound[j];
+          var prefix = w.slice(0, 2).toUpperCase();
+          var dashes = '';
+          for (var k = 2; k < w.length; k++) dashes += ' _';
+          var wordEl = document.createElement('span');
+          wordEl.className = 'hint-two-letter-word';
+          wordEl.textContent = prefix + dashes;
+          wordsContainer.appendChild(wordEl);
+        }
+      }
+    }
+  }
+
+  function renderRevealSection(revealIndex) {
+    var section = $('hint-reveal-' + (revealIndex + 1));
+    var wrap = section.querySelector('.hint-reveal-wrap');
+    var display = section.querySelector('.hint-revealed-word');
+    var revealedWord = hintsUsed.revealedWords[revealIndex];
+    if (revealedWord) {
+      if (wrap) wrap.hidden = true;
+      display.hidden = false;
+      display.textContent = revealedWord.toUpperCase();
+      display.className = 'hint-revealed-word';
+      if (foundWords.has(revealedWord)) {
+        display.classList.add('hint-revealed--found');
+      }
+    } else {
+      if (wrap) wrap.hidden = false;
+      display.hidden = true;
+    }
+  }
+
+  function revealWord(revealIndex) {
+    if (hintsUsed.revealedWords[revealIndex]) return;
+
+    var word = getNextRevealWord();
+    if (!word) {
+      showToast('All common words found!');
+      return;
+    }
+
+    hintsUsed.revealedWords[revealIndex] = word;
+
+    var prevRank = getRank(currentScore, thresholds).name;
+    var isBonus = false;
+    var points = scoreWord(word, puzzle.letters, isBonus);
+    var bloom = isBloom(word, puzzle.letters);
+
+    foundWords.add(word);
+    currentScore += points;
+
+    saveState(dateKey, { foundWords, score: currentScore, hintsUsed });
+
+    if (foundWords.size === 1) {
+      stats = checkAndUpdateStreak(stats, dateKey);
+      stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+    }
+    stats.totalWords = (stats.totalWords || 0) + 1;
+    saveStats(stats);
+
+    renderFoundWords();
+    renderRankBar();
+    renderHintsModal();
+
+    showScoreFloat('+' + points + ' (hint)');
+
+    var newRank = getRank(currentScore, thresholds).name;
+    if (newRank !== prevRank) {
+      document.dispatchEvent(new CustomEvent('Bloombert:rankup', { detail: { rank: newRank } }));
+      var rankSection = document.querySelector('.rank-section');
+      if (rankSection) {
+        rankSection.classList.remove('rankup-celebrate');
+        void rankSection.offsetWidth;
+        rankSection.classList.add('rankup-celebrate');
+        rankSection.addEventListener('animationend', function handler(e) {
+          if (e.target === rankSection) {
+            rankSection.classList.remove('rankup-celebrate');
+            rankSection.removeEventListener('animationend', handler);
+          }
+        });
+      }
+      var newRankIdx = RANK_ORDER.indexOf(newRank);
+      if (HINT_UNLOCK_RANKS.indexOf(newRankIdx) !== -1) {
+        setTimeout(function() { showToast('💡 New hint unlocked!'); }, 600);
+      }
+      updateHintNotification();
+    }
+
+    if (bloom) {
+      document.dispatchEvent(new CustomEvent('Bloombert:bloom', { detail: { word: word } }));
+      bloomWordDisplay.textContent = word.toUpperCase();
+      openModal(modalBloom);
+    }
+  }
+
   // --- Events ---
   function bindEvents() {
     // Keyboard
@@ -525,6 +806,24 @@
     if (btnViewAll) btnViewAll.addEventListener('click', function() {
       renderAllWordsModal();
       openModal(modalAllWords);
+    });
+
+    // Hints
+    if (btnHints) btnHints.addEventListener('click', openHintsModal);
+    if (btnHintsInline) btnHintsInline.addEventListener('click', openHintsModal);
+    if (modalHints) modalHints.addEventListener('click', function(e) {
+      var revealBtn = e.target.closest('.hint-reveal-btn');
+      if (revealBtn) {
+        var idx = parseInt(revealBtn.dataset.revealIndex, 10);
+        revealWord(idx);
+        return;
+      }
+      var pickerBtn = e.target.closest('.hint-picker-btn');
+      if (pickerBtn && !pickerBtn.classList.contains('hint-picker-btn--done') && !hintsUsed.selectedTwoLetterKey) {
+        hintsUsed.selectedTwoLetterKey = pickerBtn.dataset.letter;
+        saveState(dateKey, { foundWords, score: currentScore, hintsUsed });
+        renderTwoLetterPicker();
+      }
     });
 
     // Modal close — backdrop, X button, and data-modal buttons
