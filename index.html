@@ -64,6 +64,7 @@
         <span class="found-count-left">
           <span id="found-count" class="found-count">0 words</span>
           <button id="btn-view-all" class="view-all-btn" hidden>View All</button>
+          <button id="btn-hints-inline" class="hints-btn">💡 Hints</button>
         </span>
         <span class="score-display-wrap">
           <span id="score-display" class="score-display">0 pts</span>
@@ -226,6 +227,112 @@
       <button class="modal-close" data-modal="modal-all-words" aria-label="Close">✕</button>
       <h2 id="all-words-title">Found Words</h2>
       <div id="all-words-content" class="all-words-content"></div>
+    </div>
+  </div>
+
+  <!-- Hints modal -->
+  <div id="modal-hints" class="modal" role="dialog" aria-modal="true" aria-labelledby="hints-title" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-hints" aria-label="Close">✕</button>
+      <h2 id="hints-title">Hints 💡</h2>
+
+      <!-- Hint 1: Word Length Grid (Sprout / 10%) -->
+      <div id="hint-length-grid" class="hint-section" data-unlock-rank="1">
+        <h3 class="hint-section-title">
+          <span class="hint-rank-badge">🌿 Sprout</span>
+          Word Lengths
+        </h3>
+        <div class="hint-locked">
+          <span class="hint-lock-icon">🔒</span>
+          <span>Reach <strong>Sprout</strong> to unlock</span>
+        </div>
+        <div class="hint-content" hidden>
+          <p class="hint-desc">Number of common words not found - grouped by word length.</p>
+          <table class="hint-grid-table">
+            <thead>
+              <tr><th>Length</th><th>Count</th></tr>
+            </thead>
+            <tbody id="hint-grid-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Hint 2: One-Letter List (Bloom / 35%) -->
+      <div id="hint-one-letter" class="hint-section" data-unlock-rank="3">
+        <h3 class="hint-section-title">
+          <span class="hint-rank-badge">🌸 Bloom</span>
+          Starting Letters
+        </h3>
+        <div class="hint-locked">
+          <span class="hint-lock-icon">🔒</span>
+          <span>Reach <strong>Bloom</strong> to unlock</span>
+        </div>
+        <div class="hint-content" hidden>
+          <p class="hint-desc">Number of common words not found - grouped by starting letter.</p>
+          <table class="hint-grid-table">
+            <thead>
+              <tr><th>Letter</th><th>Count</th></tr>
+            </thead>
+            <tbody id="hint-one-letter-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Hint 3: Word Reveal (Petal / 50%) -->
+      <div id="hint-reveal-1" class="hint-section" data-unlock-rank="4">
+        <h3 class="hint-section-title">
+          <span class="hint-rank-badge">🌺 Petal</span>
+          Word Reveal
+        </h3>
+        <div class="hint-locked">
+          <span class="hint-lock-icon">🔒</span>
+          <span>Reach <strong>Petal</strong> to unlock</span>
+        </div>
+        <div class="hint-content" hidden>
+          <p class="hint-desc">Reveal the shortest common word that has not been found.</p>
+          <div class="hint-reveal-wrap">
+            <button class="hint-reveal-btn" data-reveal-index="0">🌱 Reveal</button>
+          </div>
+          <div class="hint-revealed-word" hidden></div>
+        </div>
+      </div>
+
+      <!-- Hint 4: Two-Letter Peek (Sunflower / 70%) -->
+      <div id="hint-two-letter" class="hint-section" data-unlock-rank="5">
+        <h3 class="hint-section-title">
+          <span class="hint-rank-badge">🌻 Sunflower</span>
+          Two-Letter Peek
+        </h3>
+        <div class="hint-locked">
+          <span class="hint-lock-icon">🔒</span>
+          <span>Reach <strong>Sunflower</strong> to unlock</span>
+        </div>
+        <div class="hint-content" hidden>
+          <p class="hint-desc">Choose a letter to reveal more hints about all the common words starting with that letter. Choose carefully — you only get one choice!</p>
+          <div id="hint-two-letter-picker" class="hint-letter-picker"></div>
+          <div id="hint-two-letter-words" class="hint-two-letter-words"></div>
+        </div>
+      </div>
+
+      <!-- Hint 5: Word Reveal #2 (Bouquet / 90%) -->
+      <div id="hint-reveal-2" class="hint-section" data-unlock-rank="6">
+        <h3 class="hint-section-title">
+          <span class="hint-rank-badge">💐 Bouquet</span>
+          Word Reveal
+        </h3>
+        <div class="hint-locked">
+          <span class="hint-lock-icon">🔒</span>
+          <span>Reach <strong>Bouquet</strong> to unlock</span>
+        </div>
+        <div class="hint-content" hidden>
+          <p class="hint-desc">Reveal another common word that has not been found.</p>
+          <div class="hint-reveal-wrap">
+            <button class="hint-reveal-btn" data-reveal-index="1">🌱 Reveal</button>
+          </div>
+          <div class="hint-revealed-word" hidden></div>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -46,8 +46,10 @@ function generatePuzzle(seed) {
     }
 
     // Avoid Q, X, Z as key letter — skip and retry
+    // S as center letter makes puzzles too easy (plurals); skip 90% of the time
     const keyLetter = letters[0];
     if ('qxz'.includes(keyLetter)) continue;
+    if (keyLetter === 's' && rng.next() < 0.9) continue;
 
     const validWords = getAllValidWords(letters, keyLetter);
     const commonWords = validWords.filter(w => COMMON_WORDS.has(w));
