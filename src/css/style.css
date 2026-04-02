@@ -80,7 +80,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: 8px 0;
   flex-shrink: 0;
 }
 
@@ -98,7 +98,13 @@ body {
 }
 
 .logo-flower {
-  font-size: 20px;
+  font-size: 14px;
+}
+
+@media (min-width: 380px) {
+  .logo-flower {
+    font-size: 18px;
+  }
 }
 
 .header-meta {
@@ -115,9 +121,15 @@ body {
 
 .streak {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--warm-grey);
+}
+
+@media (min-width: 380px) {
+  .streak {
+    font-size: 14px;
+  }
 }
 
 .icon-btn {
@@ -125,8 +137,9 @@ body {
   border: none;
   font-size: 18px;
   cursor: pointer;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,10 +148,19 @@ body {
   color: var(--warm-grey);
 }
 
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 @media (min-width: 380px) {
   .icon-btn {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
+  }
+  .icon-btn svg {
+    width: 20px;
+    height: 20px;
   }
 }
 
