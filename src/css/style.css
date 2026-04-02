@@ -1478,9 +1478,28 @@ body {
 
 .create-outer-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
-  flex-wrap: wrap;
+}
+
+@media (max-width: 374px) {
+  .create-letter-input {
+    width: 36px;
+    height: 36px;
+    font-size: 17px;
+    border-radius: 8px;
+  }
+  .create-letter-input--center {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  .create-outer-row {
+    gap: 4px;
+  }
+  #modal-create-puzzle .modal-card {
+    padding: 20px;
+  }
 }
 
 .create-error {
