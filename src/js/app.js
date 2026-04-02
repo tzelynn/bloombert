@@ -154,7 +154,7 @@
       if (btnBackToDaily) btnBackToDaily.hidden = false;
     } else {
       dateDisplay.textContent = formatDate(dateKey);
-      streakDisplay.textContent = stats.currentStreak > 1 ? `🔥 ${stats.currentStreak}` : '';
+      streakDisplay.textContent = stats.currentStreak > 1 ? `${stats.currentStreak} 🔥` : '';
       if (btnBackToDaily) btnBackToDaily.hidden = true;
     }
 

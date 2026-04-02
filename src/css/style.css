@@ -84,6 +84,12 @@ body {
   flex-shrink: 0;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .logo {
   font-family: var(--font-display);
   font-size: 16px;
