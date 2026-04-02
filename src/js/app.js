@@ -746,6 +746,12 @@
     } else {
       if (wrap) wrap.hidden = false;
       display.hidden = true;
+      var btn = wrap && wrap.querySelector('.hint-reveal-btn');
+      if (btn) {
+        var noWords = !getNextRevealWord();
+        btn.disabled = noWords;
+        btn.classList.toggle('hint-reveal-btn--disabled', noWords);
+      }
     }
   }
 
