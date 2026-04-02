@@ -86,14 +86,14 @@ body {
 
 .logo {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--charcoal);
 }
 
 @media (min-width: 380px) {
   .logo {
-    font-size: 24px;
+    font-size: 20px;
   }
 }
 
