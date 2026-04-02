@@ -933,14 +933,17 @@
       }
 
       allCreateInputs.forEach(function(inp, idx) {
-        inp.addEventListener('input', function() {
+        function handleInput() {
           var val = inp.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
           inp.value = val.slice(0, 1);
           if (val && idx < allCreateInputs.length - 1) {
             allCreateInputs[idx + 1].focus();
           }
           validateCreateInputs();
-        });
+        }
+        inp.addEventListener('input', handleInput);
+        inp.addEventListener('keyup', function() { validateCreateInputs(); });
+        inp.addEventListener('change', handleInput);
         inp.addEventListener('keydown', function(e) {
           if (e.key === 'Backspace' && !inp.value && idx > 0) {
             allCreateInputs[idx - 1].focus();
