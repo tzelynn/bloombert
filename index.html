@@ -27,6 +27,9 @@
       <div class="logo">bloombert <span class="logo-flower">🌸</span></div>
       <div class="header-meta">
         <span id="streak-display" class="streak"></span>
+        <button id="btn-create" class="icon-btn" aria-label="Create a puzzle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
         <button id="btn-share-header" class="icon-btn" aria-label="Share results">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
         </button>
@@ -52,6 +55,7 @@
       <div class="puzzle-meta">
         <span id="difficulty-badge" class="difficulty-badge"></span>
         <span id="date-display" class="date-display"></span>
+        <button id="btn-back-to-daily" class="back-to-daily-btn" hidden>Back to daily</button>
       </div>
     </section>
 
@@ -333,6 +337,38 @@
           <div class="hint-revealed-word" hidden></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Create puzzle modal -->
+  <div id="modal-create-puzzle" class="modal" role="dialog" aria-modal="true" aria-labelledby="create-title" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-create-puzzle" aria-label="Close">✕</button>
+      <h2 id="create-title">Create a Puzzle</h2>
+      <p class="create-desc">Choose 7 unique letters. The first letter is the centre letter.</p>
+      <div class="create-letter-inputs">
+        <div class="create-center-wrap">
+          <label class="create-label">Centre</label>
+          <input type="text" id="create-center" maxlength="1" class="create-letter-input create-letter-input--center" autocomplete="off" autocapitalize="characters">
+        </div>
+        <div class="create-outer-wrap">
+          <label class="create-label">Outer</label>
+          <div class="create-outer-row">
+            <input type="text" maxlength="1" class="create-letter-input create-outer" autocomplete="off" autocapitalize="characters">
+            <input type="text" maxlength="1" class="create-letter-input create-outer" autocomplete="off" autocapitalize="characters">
+            <input type="text" maxlength="1" class="create-letter-input create-outer" autocomplete="off" autocapitalize="characters">
+            <input type="text" maxlength="1" class="create-letter-input create-outer" autocomplete="off" autocapitalize="characters">
+            <input type="text" maxlength="1" class="create-letter-input create-outer" autocomplete="off" autocapitalize="characters">
+            <input type="text" maxlength="1" class="create-letter-input create-outer" autocomplete="off" autocapitalize="characters">
+          </div>
+        </div>
+      </div>
+      <div id="create-error" class="create-error" hidden></div>
+      <div id="create-preview" class="create-preview" hidden>
+        <span id="create-word-count"></span>
+      </div>
+      <button id="btn-create-go" class="share-btn" disabled>Create Puzzle</button>
     </div>
   </div>
 
