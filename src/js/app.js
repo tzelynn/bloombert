@@ -418,13 +418,43 @@
   }
 
   // --- Modals ---
+  var modalHistoryCount = 0;
+  var popstateSkips = 0;
+
   function openModal(modal) {
     modal.hidden = false;
+    modalHistoryCount++;
+    history.pushState({ bloombert_modal: true }, '');
   }
 
   function closeModal(modal) {
+    if (modal.hidden) return;
     modal.hidden = true;
+    if (modalHistoryCount > 0) {
+      modalHistoryCount--;
+      popstateSkips++;
+      history.back();
+    }
   }
+
+  // Swap one modal for another, reusing the same history entry
+  function swapModal(from, to) {
+    from.hidden = true;
+    to.hidden = false;
+  }
+
+  window.addEventListener('popstate', function() {
+    if (popstateSkips > 0) {
+      popstateSkips--;
+      return;
+    }
+    // User pressed back button — close the topmost open modal
+    var open = document.querySelector('.modal:not([hidden])');
+    if (open && modalHistoryCount > 0) {
+      modalHistoryCount--;
+      open.hidden = true;
+    }
+  });
 
   function updateStatsModal() {
     $('stat-played').textContent = stats.gamesPlayed || 0;
@@ -502,12 +532,14 @@
   }
 
   function shareResults() {
-    // Close stats modal if open
-    closeModal(modalStats);
-
     const text = getShareText();
     sharePreview.textContent = text;
-    openModal(modalShare);
+    if (!modalStats.hidden) {
+      // Swap stats → share, reusing the same history entry
+      swapModal(modalStats, modalShare);
+    } else {
+      openModal(modalShare);
+    }
   }
 
   function copyShareText() {
