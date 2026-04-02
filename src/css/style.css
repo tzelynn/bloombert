@@ -4,6 +4,10 @@
   initial-value: 88px;
 }
 
+* {
+  touch-action: manipulation;
+}
+
 :root {
   --blue-light:    #D6E9F8;
   --blue-mid:      #A8C8E8;

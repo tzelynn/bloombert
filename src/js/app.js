@@ -350,6 +350,7 @@
       p.classList.remove('shuffling');
       void p.offsetWidth;
       p.classList.add('shuffling');
+      p.addEventListener('animationend', function () { p.classList.remove('shuffling'); }, { once: true });
     });
 
     // Swap letters while petals overlap at center
@@ -530,10 +531,20 @@
     openModal(modalHints);
   }
 
+  function getHintWords() {
+    var words = puzzle.commonWords.slice();
+    for (var i = 0; i < puzzle.bonusWords.length; i++) {
+      var w = puzzle.bonusWords[i];
+      if (isBloom(w, puzzle.letters)) words.push(w);
+    }
+    return words;
+  }
+
   function computeWordLengthGrid() {
     var buckets = {};
-    for (var i = 0; i < puzzle.commonWords.length; i++) {
-      var w = puzzle.commonWords[i];
+    var hintWords = getHintWords();
+    for (var i = 0; i < hintWords.length; i++) {
+      var w = hintWords[i];
       var len = w.length;
       if (!buckets[len]) buckets[len] = { total: 0, found: 0 };
       buckets[len].total++;
@@ -546,8 +557,9 @@
 
   function computeOneLetterList() {
     var groups = {};
-    for (var i = 0; i < puzzle.commonWords.length; i++) {
-      var w = puzzle.commonWords[i];
+    var hintWords = getHintWords();
+    for (var i = 0; i < hintWords.length; i++) {
+      var w = hintWords[i];
       var letter = w[0].toUpperCase();
       if (!groups[letter]) groups[letter] = { total: 0, remaining: 0 };
       groups[letter].total++;
@@ -560,7 +572,7 @@
 
 
   function getNextRevealWord() {
-    var unfound = puzzle.commonWords
+    var unfound = getHintWords()
       .filter(function(w) { return !foundWords.has(w); })
       .sort(function(a, b) { return a.length - b.length || a.localeCompare(b); });
     return unfound.length > 0 ? unfound[0] : null;
@@ -606,7 +618,7 @@
     tbody.innerHTML = '';
     var allDone = data.every(function(d) { return d.remaining === 0; });
     if (allDone) {
-      tbody.innerHTML = '<tr><td colspan="2" class="hint-all-found">All common words found!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="2" class="hint-all-found">All words found!</td></tr>';
       return;
     }
     for (var i = 0; i < data.length; i++) {
@@ -619,8 +631,9 @@
 
   function computeTwoLetterWordsByLetter() {
     var groups = {};
-    for (var i = 0; i < puzzle.commonWords.length; i++) {
-      var w = puzzle.commonWords[i];
+    var hintWords = getHintWords();
+    for (var i = 0; i < hintWords.length; i++) {
+      var w = hintWords[i];
       var letter = w[0].toUpperCase();
       if (!groups[letter]) groups[letter] = [];
       groups[letter].push(w);
@@ -703,14 +716,14 @@
 
     var word = getNextRevealWord();
     if (!word) {
-      showToast('All common words found!');
+      showToast('All words found!');
       return;
     }
 
     hintsUsed.revealedWords[revealIndex] = word;
 
     var prevRank = getRank(currentScore, thresholds).name;
-    var isBonus = false;
+    var isBonus = !COMMON_WORDS.has(word);
     var points = scoreWord(word, puzzle.letters, isBonus);
     var bloom = isBloom(word, puzzle.letters);
 
