@@ -115,6 +115,73 @@ function getAllValidWords(letters, keyLetter) {
   return results.sort();
 }
 
+function parseCustomPuzzleParam(param) {
+  if (!param || param.length !== 7) return null;
+  var upper = param.toUpperCase();
+  if (!/^[A-Z]{7}$/.test(upper)) return null;
+  var seen = {};
+  for (var i = 0; i < 7; i++) {
+    if (seen[upper[i]]) return null;
+    seen[upper[i]] = true;
+  }
+  var keyLetter = upper[0].toLowerCase();
+  var letters = [keyLetter];
+  for (var j = 1; j < 7; j++) {
+    letters.push(upper[j].toLowerCase());
+  }
+  return { keyLetter: keyLetter, letters: letters };
+}
+
+function getCanonicalPuzzleCode(keyLetter, letters) {
+  var outer = [];
+  for (var i = 0; i < letters.length; i++) {
+    if (letters[i].toLowerCase() !== keyLetter.toLowerCase()) {
+      outer.push(letters[i].toUpperCase());
+    }
+  }
+  outer.sort();
+  return keyLetter.toUpperCase() + outer.join('');
+}
+
+function generateCustomPuzzle(letters, keyLetter) {
+  var validWords = getAllValidWords(letters, keyLetter);
+  var commonWords = validWords.filter(function(w) { return COMMON_WORDS.has(w); });
+  var bonusWords = validWords.filter(function(w) { return !COMMON_WORDS.has(w); });
+
+  var commonScore = 0;
+  var totalScore = 0;
+  var hasBloom = false;
+  for (var i = 0; i < validWords.length; i++) {
+    var word = validWords[i];
+    var bonus = !COMMON_WORDS.has(word);
+    var pts = scoreWord(word, letters, bonus);
+    totalScore += pts;
+    if (!bonus) commonScore += pts;
+    if (isBloom(word, letters)) hasBloom = true;
+  }
+
+  var difficulty;
+  if (commonWords.length > 40 && commonScore > 120) {
+    difficulty = 'Easy';
+  } else if (commonWords.length < 25 || commonScore < 60) {
+    difficulty = 'Hard';
+  } else {
+    difficulty = 'Medium';
+  }
+
+  return {
+    letters: letters,
+    keyLetter: keyLetter,
+    validWords: validWords,
+    commonWords: commonWords,
+    bonusWords: bonusWords,
+    commonScore: commonScore,
+    totalScore: totalScore,
+    hasBloom: hasBloom,
+    difficulty: difficulty,
+  };
+}
+
 function isValidGuess(word, letters, keyLetter, foundWords) {
   if (word.length < 4) {
     return { valid: false, reason: 'too_short' };

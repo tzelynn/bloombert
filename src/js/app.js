@@ -11,6 +11,8 @@
   let dateKey = '';
   let stats = {};
   let hintsUsed = { revealedWords: [], selectedTwoLetterKey: null };
+  let isCustomPuzzle = false;
+  let customPuzzleCode = null;
 
   // --- Icon SVGs ---
   const ICON_CLIPBOARD = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
@@ -54,11 +56,38 @@
   const btnHintsInline = $('btn-hints-inline');
   const modalHints = $('modal-hints');
 
+  // --- DOM refs (create modal) ---
+  const btnCreate = $('btn-create');
+  const modalCreate = $('modal-create-puzzle');
+  const createCenter = $('create-center');
+  const createError = $('create-error');
+  const createPreview = $('create-preview');
+  const createWordCount = $('create-word-count');
+  const btnCreateGo = $('btn-create-go');
+  const btnBackToDaily = $('btn-back-to-daily');
+
   // --- Init ---
   function init() {
-    dateKey = getTodaysDateKey();
-    const seed = getTodaysSeed();
-    puzzle = generatePuzzle(seed);
+    // Check for custom puzzle in URL
+    var params = new URLSearchParams(window.location.search);
+    var customParam = params.get('p');
+    var customData = customParam ? parseCustomPuzzleParam(customParam) : null;
+
+    if (customData) {
+      isCustomPuzzle = true;
+      customPuzzleCode = getCanonicalPuzzleCode(customData.keyLetter, customData.letters);
+      // Redirect to canonical URL if needed
+      if (customParam.toUpperCase() !== customPuzzleCode) {
+        window.location.replace(window.location.pathname + '?p=' + customPuzzleCode);
+        return;
+      }
+      dateKey = 'custom-' + customPuzzleCode;
+      puzzle = generateCustomPuzzle(customData.letters, customData.keyLetter);
+    } else {
+      dateKey = getTodaysDateKey();
+      var seed = getTodaysSeed();
+      puzzle = generatePuzzle(seed);
+    }
     thresholds = computeRankThresholds(puzzle.commonScore);
 
     const saved = loadState(dateKey);
@@ -90,7 +119,7 @@
       let actualWords = 0;
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('bloombert-state-') && k !== `bloombert-state-${dateKey}`) {
+        if (k && k.startsWith('bloombert-state-') && !k.startsWith('bloombert-state-custom-') && k !== `bloombert-state-${dateKey}`) {
           try {
             const s = JSON.parse(localStorage.getItem(k));
             if (s && s.foundWords) {
@@ -119,8 +148,15 @@
 
     // Display metadata
     difficultyBadge.textContent = puzzle.difficulty;
-    dateDisplay.textContent = formatDate(dateKey);
-    streakDisplay.textContent = stats.currentStreak > 1 ? `🔥 ${stats.currentStreak}` : '';
+    if (isCustomPuzzle) {
+      dateDisplay.textContent = 'Custom Puzzle';
+      streakDisplay.textContent = '';
+      if (btnBackToDaily) btnBackToDaily.hidden = false;
+    } else {
+      dateDisplay.textContent = formatDate(dateKey);
+      streakDisplay.textContent = stats.currentStreak > 1 ? `🔥 ${stats.currentStreak}` : '';
+      if (btnBackToDaily) btnBackToDaily.hidden = true;
+    }
 
     renderHexGrid();
     renderFoundWords();
@@ -285,13 +321,15 @@
 
     saveState(dateKey, { foundWords, score: currentScore, hintsUsed });
 
-    // Count this day as played on first valid word
-    if (foundWords.size === 1) {
-      stats = checkAndUpdateStreak(stats, dateKey);
-      stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+    // Count this day as played on first valid word (daily puzzles only)
+    if (!isCustomPuzzle) {
+      if (foundWords.size === 1) {
+        stats = checkAndUpdateStreak(stats, dateKey);
+        stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+      }
+      stats.totalWords = (stats.totalWords || 0) + 1;
+      saveStats(stats);
     }
-    stats.totalWords = (stats.totalWords || 0) + 1;
-    saveStats(stats);
 
     renderFoundWords();
     renderRankBar();
@@ -350,6 +388,7 @@
       p.classList.remove('shuffling');
       void p.offsetWidth;
       p.classList.add('shuffling');
+      p.addEventListener('animationend', function () { p.classList.remove('shuffling'); }, { once: true });
     });
 
     // Swap letters while petals overlap at center
@@ -459,7 +498,7 @@
     const rank = getRank(currentScore, thresholds);
     const bloomCount = [...foundWords].filter(w => isBloom(w, puzzle.letters)).length;
     const commonFound = foundWords.size - bonusCount;
-    return formatShareText(dateKey, rank, commonFound, puzzle.commonWords.length, currentScore, bloomCount, bonusCount);
+    return formatShareText(dateKey, rank, commonFound, puzzle.commonWords.length, currentScore, bloomCount, bonusCount, isCustomPuzzle ? customPuzzleCode : null);
   }
 
   function shareResults() {
@@ -530,10 +569,20 @@
     openModal(modalHints);
   }
 
+  function getHintWords() {
+    var words = puzzle.commonWords.slice();
+    for (var i = 0; i < puzzle.bonusWords.length; i++) {
+      var w = puzzle.bonusWords[i];
+      if (isBloom(w, puzzle.letters)) words.push(w);
+    }
+    return words;
+  }
+
   function computeWordLengthGrid() {
     var buckets = {};
-    for (var i = 0; i < puzzle.commonWords.length; i++) {
-      var w = puzzle.commonWords[i];
+    var hintWords = getHintWords();
+    for (var i = 0; i < hintWords.length; i++) {
+      var w = hintWords[i];
       var len = w.length;
       if (!buckets[len]) buckets[len] = { total: 0, found: 0 };
       buckets[len].total++;
@@ -546,8 +595,9 @@
 
   function computeOneLetterList() {
     var groups = {};
-    for (var i = 0; i < puzzle.commonWords.length; i++) {
-      var w = puzzle.commonWords[i];
+    var hintWords = getHintWords();
+    for (var i = 0; i < hintWords.length; i++) {
+      var w = hintWords[i];
       var letter = w[0].toUpperCase();
       if (!groups[letter]) groups[letter] = { total: 0, remaining: 0 };
       groups[letter].total++;
@@ -560,7 +610,7 @@
 
 
   function getNextRevealWord() {
-    var unfound = puzzle.commonWords
+    var unfound = getHintWords()
       .filter(function(w) { return !foundWords.has(w); })
       .sort(function(a, b) { return a.length - b.length || a.localeCompare(b); });
     return unfound.length > 0 ? unfound[0] : null;
@@ -606,7 +656,7 @@
     tbody.innerHTML = '';
     var allDone = data.every(function(d) { return d.remaining === 0; });
     if (allDone) {
-      tbody.innerHTML = '<tr><td colspan="2" class="hint-all-found">All common words found!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="2" class="hint-all-found">All words found!</td></tr>';
       return;
     }
     for (var i = 0; i < data.length; i++) {
@@ -619,8 +669,9 @@
 
   function computeTwoLetterWordsByLetter() {
     var groups = {};
-    for (var i = 0; i < puzzle.commonWords.length; i++) {
-      var w = puzzle.commonWords[i];
+    var hintWords = getHintWords();
+    for (var i = 0; i < hintWords.length; i++) {
+      var w = hintWords[i];
       var letter = w[0].toUpperCase();
       if (!groups[letter]) groups[letter] = [];
       groups[letter].push(w);
@@ -703,14 +754,14 @@
 
     var word = getNextRevealWord();
     if (!word) {
-      showToast('All common words found!');
+      showToast('All words found!');
       return;
     }
 
     hintsUsed.revealedWords[revealIndex] = word;
 
     var prevRank = getRank(currentScore, thresholds).name;
-    var isBonus = false;
+    var isBonus = !COMMON_WORDS.has(word);
     var points = scoreWord(word, puzzle.letters, isBonus);
     var bloom = isBloom(word, puzzle.letters);
 
@@ -719,12 +770,14 @@
 
     saveState(dateKey, { foundWords, score: currentScore, hintsUsed });
 
-    if (foundWords.size === 1) {
-      stats = checkAndUpdateStreak(stats, dateKey);
-      stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+    if (!isCustomPuzzle) {
+      if (foundWords.size === 1) {
+        stats = checkAndUpdateStreak(stats, dateKey);
+        stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+      }
+      stats.totalWords = (stats.totalWords || 0) + 1;
+      saveStats(stats);
     }
-    stats.totalWords = (stats.totalWords || 0) + 1;
-    saveStats(stats);
 
     renderFoundWords();
     renderRankBar();
@@ -826,6 +879,87 @@
       }
     });
 
+    // Create puzzle modal
+    if (btnCreate) btnCreate.addEventListener('click', function() { openModal(modalCreate); });
+    if (btnBackToDaily) btnBackToDaily.addEventListener('click', function() {
+      window.location.href = window.location.pathname;
+    });
+    if (modalCreate) {
+      var createOuterInputs = modalCreate.querySelectorAll('.create-outer');
+      var allCreateInputs = [createCenter].concat(Array.from(createOuterInputs));
+
+      function validateCreateInputs() {
+        var letters = [];
+        var allFilled = true;
+        var hasDupe = false;
+        var seen = {};
+        for (var i = 0; i < allCreateInputs.length; i++) {
+          var val = allCreateInputs[i].value.toUpperCase();
+          if (!val || !/^[A-Z]$/.test(val)) { allFilled = false; continue; }
+          if (seen[val]) hasDupe = true;
+          seen[val] = true;
+          letters.push(val.toLowerCase());
+        }
+
+        if (!allFilled || letters.length < 7) {
+          btnCreateGo.disabled = true;
+          createError.hidden = true;
+          createPreview.hidden = true;
+          return;
+        }
+        if (hasDupe) {
+          btnCreateGo.disabled = true;
+          createError.textContent = 'Letters must be unique';
+          createError.hidden = false;
+          createPreview.hidden = true;
+          return;
+        }
+
+        createError.hidden = true;
+        // Show word count preview
+        var keyLetter = letters[0];
+        var words = getAllValidWords(letters, keyLetter);
+        var commonCount = words.filter(function(w) { return COMMON_WORDS.has(w); }).length;
+        createWordCount.textContent = commonCount + ' common words, ' + words.length + ' total';
+        createPreview.hidden = false;
+
+        if (words.length === 0) {
+          createError.textContent = 'No valid words with these letters';
+          createError.hidden = false;
+          btnCreateGo.disabled = true;
+        } else {
+          btnCreateGo.disabled = false;
+        }
+      }
+
+      allCreateInputs.forEach(function(inp, idx) {
+        inp.addEventListener('input', function() {
+          var val = inp.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+          inp.value = val.slice(0, 1);
+          if (val && idx < allCreateInputs.length - 1) {
+            allCreateInputs[idx + 1].focus();
+          }
+          validateCreateInputs();
+        });
+        inp.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !inp.value && idx > 0) {
+            allCreateInputs[idx - 1].focus();
+          }
+        });
+      });
+
+      btnCreateGo.addEventListener('click', function() {
+        var center = createCenter.value.toUpperCase();
+        var outer = [];
+        createOuterInputs.forEach(function(inp) {
+          outer.push(inp.value.toUpperCase());
+        });
+        var allLetters = [center.toLowerCase()].concat(outer.map(function(l) { return l.toLowerCase(); }));
+        var code = getCanonicalPuzzleCode(center.toLowerCase(), allLetters);
+        window.location.href = window.location.pathname + '?p=' + code;
+      });
+    }
+
     // Modal close — backdrop, X button, and data-modal buttons
     document.querySelectorAll('.modal').forEach((modal) => {
       const backdrop = modal.querySelector('.modal-backdrop');
@@ -840,22 +974,24 @@
       });
     });
 
-    // Day rollover — check on visibility change AND periodically
-    function checkDayRollover() {
-      const newKey = getTodaysDateKey();
-      if (newKey !== dateKey) {
-        location.reload();
+    // Day rollover — check on visibility change AND periodically (daily puzzles only)
+    if (!isCustomPuzzle) {
+      function checkDayRollover() {
+        const newKey = getTodaysDateKey();
+        if (newKey !== dateKey) {
+          location.reload();
+        }
       }
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          checkDayRollover();
+        }
+      });
+
+      // Check every 60 seconds in case the tab stays open past midnight
+      setInterval(checkDayRollover, 60000);
     }
-
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        checkDayRollover();
-      }
-    });
-
-    // Check every 60 seconds in case the tab stays open past midnight
-    setInterval(checkDayRollover, 60000);
   }
 
   // --- Start ---
