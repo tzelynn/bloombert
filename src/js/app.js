@@ -154,7 +154,7 @@
       if (btnBackToDaily) btnBackToDaily.hidden = false;
     } else {
       dateDisplay.textContent = formatDate(dateKey);
-      streakDisplay.textContent = stats.currentStreak > 1 ? `🔥 ${stats.currentStreak}` : '';
+      streakDisplay.textContent = stats.currentStreak > 1 ? `${stats.currentStreak} 🔥` : '';
       if (btnBackToDaily) btnBackToDaily.hidden = true;
     }
 
@@ -364,6 +364,10 @@
       if (HINT_UNLOCK_RANKS.indexOf(newRankIdx) !== -1) {
         setTimeout(function() { showToast('💡 New hint unlocked!'); }, 600);
       }
+      if (newRank === 'Garden Master') {
+        launchConfetti();
+        setTimeout(function() { shareResults(); }, 1800);
+      }
       updateHintNotification();
     }
 
@@ -415,6 +419,25 @@
     scoreFloatTimer = setTimeout(function() {
       scoreFloat.classList.remove('score-float--active');
     }, 2000);
+  }
+
+  // --- Confetti (petal-themed) ---
+  function launchConfetti() {
+    var container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+    var petals = ['🌸', '🌺', '🌼', '💐', '🌻', '🌷', '🌹', '✨', '🌟'];
+    for (var i = 0; i < 50; i++) {
+      var span = document.createElement('span');
+      span.className = 'confetti-petal';
+      span.textContent = petals[Math.floor(Math.random() * petals.length)];
+      span.style.left = Math.random() * 100 + '%';
+      span.style.animationDelay = Math.random() * 2 + 's';
+      span.style.animationDuration = (2 + Math.random() * 2) + 's';
+      span.style.fontSize = (14 + Math.random() * 14) + 'px';
+      container.appendChild(span);
+    }
+    setTimeout(function() { container.remove(); }, 5000);
   }
 
   // --- Modals ---
@@ -841,6 +864,10 @@
       var newRankIdx = RANK_ORDER.indexOf(newRank);
       if (HINT_UNLOCK_RANKS.indexOf(newRankIdx) !== -1) {
         setTimeout(function() { showToast('💡 New hint unlocked!'); }, 600);
+      }
+      if (newRank === 'Garden Master') {
+        launchConfetti();
+        setTimeout(function() { shareResults(); }, 1800);
       }
       updateHintNotification();
     }
