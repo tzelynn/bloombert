@@ -98,12 +98,12 @@ body {
 .header-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0px;
 }
 
 @media (min-width: 380px) {
   .header-meta {
-    gap: 8px;
+    gap: 2px;
   }
 }
 
