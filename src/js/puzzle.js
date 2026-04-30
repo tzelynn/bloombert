@@ -20,6 +20,33 @@ function getTodaysDateKey() {
   return `${y}-${m}-${dd}`;
 }
 
+// --- Letter classification helpers ---
+
+function countVowels(letters) {
+  let n = 0;
+  for (const c of letters) {
+    if ('aeiou'.includes(c)) n++;
+  }
+  return n;
+}
+
+function countRareConsonants(letters) {
+  let n = 0;
+  for (const c of letters) {
+    if ('jqxz'.includes(c)) n++;
+  }
+  return n;
+}
+
+function hasERTogether(letters) {
+  let e = false, r = false;
+  for (const c of letters) {
+    if (c === 'e') e = true;
+    if (c === 'r') r = true;
+  }
+  return e && r;
+}
+
 function generatePuzzle(seed) {
   const vowels = 'aeiou'.split('');
   const commonConsonants = 'bcdfghlmnprst'.split('');

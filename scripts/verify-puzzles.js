@@ -60,6 +60,27 @@ for (let i = 0; i < DAYS; i++) {
   puzzles.push({ dateStr, seed, dow: date.getUTCDay(), p });
 }
 
+// --- Helper unit assertions ---
+function assertEq(actual, expected, label) {
+  const a = JSON.stringify(actual);
+  const e = JSON.stringify(expected);
+  if (a !== e) failures.push(`helper ${label}: got ${a}, expected ${e}`);
+}
+
+function tryAssertEq(fn, expected, label) {
+  let actual;
+  try { actual = fn(); } catch (e) { actual = undefined; }
+  assertEq(actual, expected, label);
+}
+
+tryAssertEq(() => ctx.countVowels(['a','b','e','c','i','o','u']), 5, 'countVowels(5)');
+tryAssertEq(() => ctx.countVowels(['b','c','d','f','g','h','j']), 0, 'countVowels(0)');
+tryAssertEq(() => ctx.countRareConsonants(['j','q','x','z','a','e','i']), 4, 'countRareConsonants');
+tryAssertEq(() => ctx.countRareConsonants(['a','b','c','d','e','f','g']), 0, 'countRareConsonants zero');
+tryAssertEq(() => ctx.hasERTogether(['a','e','r','b','c','d','f']), true, 'hasERTogether yes');
+tryAssertEq(() => ctx.hasERTogether(['a','e','b','c','d','f','g']), false, 'hasERTogether no e');
+tryAssertEq(() => ctx.hasERTogether(['a','r','b','c','d','f','g']), false, 'hasERTogether no r');
+
 // Summary
 console.log(`Generated ${puzzles.length}/${DAYS} puzzles`);
 const centerCounts = {};
