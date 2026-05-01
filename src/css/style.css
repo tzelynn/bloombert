@@ -1579,3 +1579,391 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================
+ * Screens (home / game / yesterday)
+ * ============================================================ */
+.screen {
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.screen[hidden] {
+  display: none !important;
+}
+
+/* ============================================================
+ * Home screen
+ * ============================================================ */
+.home-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 32px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+  position: relative;
+  z-index: 1;
+}
+
+.home-logo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 24px;
+  margin-bottom: 36px;
+}
+
+.home-logo-text {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--charcoal);
+  line-height: 1;
+}
+
+.home-logo-flower {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.home-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.home-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 20px;
+  background: white;
+  border: 1px solid var(--cream-dark);
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  color: var(--charcoal);
+  box-shadow: 0 2px 8px var(--shadow);
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(44, 40, 37, 0.14);
+  transform: translateY(-2px);
+}
+
+.home-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.home-card:focus-visible {
+  outline: 2px solid var(--blue-sat);
+  outline-offset: 2px;
+}
+
+.home-card-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 44px;
+  text-align: center;
+}
+
+.home-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.home-card-label {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.home-card-blurb {
+  font-size: 13px;
+  color: var(--warm-grey);
+  line-height: 1.4;
+}
+
+@media (min-width: 640px) {
+  .home-container {
+    max-width: 720px;
+    padding-top: 60px;
+  }
+
+  .home-logo-text {
+    font-size: 44px;
+  }
+
+  .home-logo-flower {
+    font-size: 32px;
+  }
+
+  .home-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .home-card {
+    padding: 22px 22px;
+  }
+}
+
+/* ============================================================
+ * Yesterday's Solution screen
+ * ============================================================ */
+.yesterday-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.yesterday-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.yesterday-date {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-grey);
+}
+
+.yesterday-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin: 8px 0 16px;
+  text-align: center;
+}
+
+/* Letter row (7 tiles populated by JS) */
+.letter-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 20px;
+  flex-wrap: wrap;
+}
+
+.letter-tile {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 6px var(--shadow);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--charcoal);
+  text-transform: uppercase;
+}
+
+.letter-tile-centre {
+  background: var(--blue-mid);
+  color: var(--charcoal);
+}
+
+@media (min-width: 640px) {
+  .letter-tile {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+}
+
+.yesterday-section {
+  margin-bottom: 20px;
+}
+
+.yesterday-section h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: 10px;
+}
+
+#yesterday-pangrams {
+  background: #FFF9E6;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--gold);
+}
+
+#yesterday-pangrams ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#yesterday-pangrams li {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #F5E6B8;
+  color: #7A6420;
+  text-transform: lowercase;
+}
+
+#yesterday-words-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  columns: 2;
+  column-gap: 16px;
+}
+
+#yesterday-words-list li {
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 1px 0;
+  text-transform: lowercase;
+  break-inside: avoid;
+}
+
+@media (min-width: 640px) {
+  #yesterday-words-list {
+    columns: 3;
+  }
+}
+
+.word-found {
+  font-weight: 700;
+  color: var(--blue-sat);
+}
+
+.word-missed {
+  color: var(--warm-grey);
+  opacity: 0.7;
+}
+
+.yesterday-summary {
+  text-align: center;
+  font-size: 14px;
+  color: var(--warm-grey);
+  margin-top: 16px;
+  padding: 8px;
+}
+
+/* ============================================================
+ * Timer display (in game header / puzzle-meta)
+ * ============================================================ */
+.timer-display {
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--charcoal);
+  background: var(--cream-dark);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+.timer-display[hidden] {
+  display: none;
+}
+
+.timer-display.timer-warning {
+  background: rgba(232, 133, 122, 0.18);
+  color: var(--coral);
+  animation: timer-pulse 1s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ============================================================
+ * Timed-end modal
+ * ============================================================ */
+.timed-end-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0 20px;
+  padding: 16px;
+  background: var(--cream);
+  border-radius: 12px;
+}
+
+.timed-end-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timed-end-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--warm-grey);
+}
+
+.timed-end-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.timed-end-of {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--warm-grey);
+}
+
+#modal-timed-end .primary-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--blue-sat);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+#modal-timed-end .primary-btn:hover {
+  background: #4a93c4;
+}
+
+#modal-timed-end .primary-btn:focus-visible {
+  outline: 2px solid var(--blue-sat);
+  outline-offset: 2px;
+}
