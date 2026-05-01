@@ -89,7 +89,6 @@
   const createPreview = $('create-preview');
   const createWordCount = $('create-word-count');
   const btnCreateGo = $('btn-create-go');
-  const btnBackToDaily = $('btn-back-to-daily');
 
   // --- DOM refs (home / yesterday / timed-end) ---
   const homeBtnDaily = $('home-btn-daily');
@@ -108,6 +107,7 @@
   const timedEndTotal = $('timed-end-total');
   const timedEndRank = $('timed-end-rank');
   const timedEndHome = $('timed-end-home');
+  const timedEndShare = $('timed-end-share');
 
   // --- Routing ---
   function newUrlForScreen(name, opts) {
@@ -247,6 +247,7 @@
     unlockTimedInput();
     if (timerDisplay) timerDisplay.hidden = true;
     if (timerDisplay) timerDisplay.classList.remove('timer-warning');
+    if (btnHintsInline) btnHintsInline.hidden = false;
 
     dateKey = getTodaysDateKey();
     var seed = getTodaysSeed();
@@ -260,7 +261,6 @@
     difficultyBadge.textContent = puzzle.difficulty;
     dateDisplay.textContent = formatDate(dateKey);
     streakDisplay.textContent = stats.currentStreak > 1 ? `${stats.currentStreak} 🔥` : '';
-    if (btnBackToDaily) btnBackToDaily.hidden = true;
 
     currentInput = '';
     renderHexGrid();
@@ -285,6 +285,7 @@
     unlockTimedInput();
     if (timerDisplay) timerDisplay.hidden = true;
     if (timerDisplay) timerDisplay.classList.remove('timer-warning');
+    if (btnHintsInline) btnHintsInline.hidden = false;
 
     // Redirect to canonical URL if needed (preserves /?p=CANONICAL)
     if (customParam.toUpperCase() !== customPuzzleCode) {
@@ -303,7 +304,6 @@
     difficultyBadge.textContent = puzzle.difficulty;
     dateDisplay.textContent = 'Custom Puzzle';
     streakDisplay.textContent = '';
-    if (btnBackToDaily) btnBackToDaily.hidden = false;
 
     currentInput = '';
     renderHexGrid();
@@ -321,6 +321,7 @@
     isCustomPuzzle = false;
     customPuzzleCode = null;
     stopTimerInterval();
+    if (btnHintsInline) btnHintsInline.hidden = true;
 
     var seed = getTodaysTimedSeed();
     try {
@@ -366,7 +367,6 @@
     difficultyBadge.textContent = puzzle.difficulty;
     dateDisplay.textContent = '';
     streakDisplay.textContent = '';
-    if (btnBackToDaily) btnBackToDaily.hidden = true;
 
     currentInput = '';
     renderHexGrid();
@@ -411,8 +411,8 @@
         startTimerInterval();
       }
     } else {
-      // Not started yet — display the full duration. Timer starts on first input.
-      timerDisplay.textContent = formatTime(TIMED_DURATION_MS);
+      // Fresh timed puzzle — start the timer immediately on display.
+      startTimer();
     }
 
     return true;
@@ -633,6 +633,8 @@
       timerDisplay.textContent = '0:00';
       timerDisplay.classList.add('timer-warning');
     }
+    var rank = getRank(currentScore, thresholds);
+    launchConfetti(rank.emoji);
     openTimedEndModal();
   }
 
@@ -784,10 +786,6 @@
   // --- Input handling ---
   function appendLetter(letter) {
     if (mode === 'timed' && timedCompleted) return;
-    // Timed mode: first interaction starts the timer
-    if (mode === 'timed' && timerStartTimestamp == null) {
-      startTimer();
-    }
     currentInput += letter.toLowerCase();
     renderInput();
   }
@@ -810,11 +808,6 @@
     if (mode === 'timed' && timedCompleted) return;
     const word = currentInput.toLowerCase();
     if (word.length === 0) return;
-
-    // Timed mode: ensure timer is running on first submit too
-    if (mode === 'timed' && timerStartTimestamp == null) {
-      startTimer();
-    }
 
     const result = isValidGuess(word, puzzle.letters, puzzle.keyLetter, foundWords);
 
@@ -957,11 +950,12 @@
   }
 
   // --- Confetti (petal-themed) ---
-  function launchConfetti() {
+  // Pass a single emoji to use only that emoji (e.g. the player's rank emoji).
+  function launchConfetti(singleEmoji) {
     var container = document.createElement('div');
     container.className = 'confetti-container';
     document.body.appendChild(container);
-    var petals = ['🌸', '🌺', '🌼', '💐', '🌻', '🌷', '🌹', '✨', '🌟'];
+    var petals = singleEmoji ? [singleEmoji] : ['🌸', '🌺', '🌼', '💐', '🌻', '🌷', '🌹', '✨', '🌟'];
     for (var i = 0; i < 50; i++) {
       var span = document.createElement('span');
       span.className = 'confetti-petal';
@@ -1147,7 +1141,7 @@
     const rank = getRank(currentScore, thresholds);
     const bloomCount = [...foundWords].filter(w => isBloom(w, puzzle.letters)).length;
     const commonFound = foundWords.size - bonusCount;
-    return formatShareText(dateKey, rank, commonFound, puzzle.commonWords.length, currentScore, bloomCount, bonusCount, isCustomPuzzle ? customPuzzleCode : null);
+    return formatShareText(dateKey, rank, commonFound, puzzle.commonWords.length, currentScore, bloomCount, bonusCount, isCustomPuzzle ? customPuzzleCode : null, mode);
   }
 
   function shareResults() {
@@ -1539,6 +1533,13 @@
       showScreen('home');
     });
 
+    // Timed end modal → Share (swap into share modal, like daily flow)
+    if (timedEndShare) timedEndShare.addEventListener('click', function() {
+      const text = getShareText();
+      sharePreview.textContent = text;
+      swapModal(modalTimedEnd, modalShare);
+    });
+
     // Share
     if (btnShare) btnShare.addEventListener('click', shareResults);
     if (btnShareHeader) btnShareHeader.addEventListener('click', shareResults);
@@ -1564,11 +1565,6 @@
         persistGameState();
         renderTwoLetterPicker();
       }
-    });
-
-    // Back-to-daily (custom puzzle): nav to /
-    if (btnBackToDaily) btnBackToDaily.addEventListener('click', function() {
-      window.location.href = window.location.pathname;
     });
 
     // Create puzzle modal — input wiring + submit. The header trigger button

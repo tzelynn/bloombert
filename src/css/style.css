@@ -80,7 +80,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 6px 0;
   flex-shrink: 0;
 }
 
@@ -175,7 +175,7 @@ body {
 
 /* Rank section */
 .rank-section {
-  padding: 8px 0;
+  padding: 4px 0 6px;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -247,7 +247,7 @@ body {
 
 /* Found words section */
 .found-section {
-  padding: 12px 0;
+  padding: 6px 0;
   flex-shrink: 0;
 }
 
@@ -414,7 +414,7 @@ body {
 /* Input display */
 .input-display {
   text-align: center;
-  height: 52px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -423,7 +423,7 @@ body {
 
 .input-text {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--charcoal);
   letter-spacing: 4px;
@@ -433,7 +433,7 @@ body {
 .input-caret {
   display: inline-block;
   width: 2px;
-  height: 32px;
+  height: 26px;
   background: var(--blue-sat);
   margin-left: 2px;
   animation: blink 1s step-end infinite;
@@ -445,7 +445,7 @@ body {
 
 /* Flower grid */
 .hex-grid-section {
-  padding: 8px 0;
+  padding: 4px 0;
   flex: 1 1 auto;
   display: flex;
   align-items: center;
@@ -574,19 +574,19 @@ body {
   display: flex;
   gap: 12px;
   justify-content: center;
-  padding: 16px 0;
+  padding: 8px 0 12px;
   flex-shrink: 0;
 }
 
 .action-btn {
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 999px;
   border: none;
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 15px;
   font-weight: 500;
-  min-height: 44px;
+  min-height: 40px;
   min-width: 44px;
   transition: background-color 0.15s, transform 0.1s;
   display: inline-flex;
@@ -800,6 +800,12 @@ body {
 .share-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .share-btn:disabled:hover { background: var(--blue-sat); }
 .share-btn:focus-visible { outline: 2px solid var(--blue-sat); outline-offset: 2px; }
+
+.share-btn--secondary {
+  background: var(--cream-dark);
+  color: var(--charcoal);
+}
+.share-btn--secondary:hover { background: #e0d6c8; }
 
 /* Share preview */
 .share-preview {
@@ -1406,6 +1412,29 @@ body {
   white-space: nowrap;
 }
 
+/* Compact-height phones — shrink the flower so the puzzle fits without scrolling */
+@media (max-height: 700px) {
+  .flower-grid {
+    width: 248px;
+    height: 248px;
+  }
+
+  .flower-center {
+    width: 74px;
+    height: 74px;
+  }
+
+  .flower-petal {
+    --petal-dist: 78px;
+    width: 60px;
+    height: 74px;
+  }
+
+  .hex-letter {
+    font-size: 20px;
+  }
+}
+
 /* Desktop */
 @media (min-width: 640px) {
   body {
@@ -1551,26 +1580,6 @@ body {
 
 .create-preview[hidden] { display: none; }
 
-/* Back to daily button */
-.back-to-daily-btn {
-  background: none;
-  border: none;
-  color: var(--blue-sat);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 999px;
-  transition: background 0.15s;
-}
-
-.back-to-daily-btn:hover {
-  background: var(--blue-light);
-}
-
-.back-to-daily-btn[hidden] { display: none; }
-
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1599,7 +1608,7 @@ body {
 .home-container {
   max-width: 480px;
   margin: 0 auto;
-  padding: 32px 16px 40px;
+  padding: 16px 16px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1612,39 +1621,39 @@ body {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-top: 24px;
-  margin-bottom: 36px;
+  margin-top: 8px;
+  margin-bottom: 18px;
 }
 
 .home-logo-text {
   font-family: var(--font-display);
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 700;
   color: var(--charcoal);
   line-height: 1;
 }
 
 .home-logo-flower {
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1;
 }
 
 .home-cards {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
 }
 
 .home-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
-  padding: 18px 20px;
+  padding: 12px 14px;
   background: white;
   border: 1px solid var(--cream-dark);
-  border-radius: 16px;
+  border-radius: 14px;
   cursor: pointer;
   text-align: left;
   font-family: var(--font-body);
@@ -1670,56 +1679,63 @@ body {
 }
 
 .home-card-icon {
-  font-size: 32px;
+  font-size: 26px;
   line-height: 1;
   flex-shrink: 0;
-  width: 44px;
+  width: 36px;
   text-align: center;
 }
 
 .home-card-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   flex: 1 1 auto;
   min-width: 0;
 }
 
 .home-card-label {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--charcoal);
+  line-height: 1.2;
 }
 
 .home-card-blurb {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--warm-grey);
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 @media (min-width: 640px) {
   .home-container {
-    max-width: 720px;
-    padding-top: 60px;
+    padding-top: 32px;
   }
 
   .home-logo-text {
-    font-size: 44px;
+    font-size: 36px;
   }
 
   .home-logo-flower {
-    font-size: 32px;
-  }
-
-  .home-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    font-size: 28px;
   }
 
   .home-card {
-    padding: 22px 22px;
+    padding: 14px 16px;
+  }
+
+  .home-card-icon {
+    font-size: 28px;
+    width: 40px;
+  }
+
+  .home-card-label {
+    font-size: 16px;
+  }
+
+  .home-card-blurb {
+    font-size: 13px;
   }
 }
 
@@ -1943,5 +1959,15 @@ body {
   font-size: 14px;
   font-weight: 400;
   color: var(--warm-grey);
+}
+
+.timed-end-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timed-end-actions .share-btn {
+  margin-top: 0;
 }
 
