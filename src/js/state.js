@@ -24,6 +24,7 @@ function saveState(dateKey, state) {
   }
 }
 
+// Unlike loadState, foundWords stays as a plain array — caller wraps in a Set if it needs Set semantics.
 function loadTimedState(dateKey) {
   try {
     const raw = localStorage.getItem(`bloombert-timed-state-${dateKey}`);
