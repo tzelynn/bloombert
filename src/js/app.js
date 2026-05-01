@@ -28,6 +28,12 @@
   let timerInterval = null;
   let timerStartTimestamp = null;     // mirrors timed state.startTimestamp for fast access
   let timedCompleted = false;         // input lock for finished timed puzzle
+  // When initTimedPuzzle() detects a saved completed/expired timed game, it
+  // sets this flag instead of opening modal-timed-end synchronously. The
+  // calling routing code consumes the flag *after* showScreen('game', ...) so
+  // the modal isn't immediately closed by showScreen's "close any open modal"
+  // logic. Symmetric: set in one place, consumed (and reset) in each caller.
+  let pendingTimedEndModal = false;
 
   // --- Icon SVGs ---
   const ICON_CLIPBOARD = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
@@ -166,6 +172,10 @@
       var ok2 = initTimedPuzzle();
       if (ok2) {
         showScreen('game', { pushHistory: false, gameMode: 'timed' });
+        if (pendingTimedEndModal) {
+          pendingTimedEndModal = false;
+          openTimedEndModal();
+        }
       } else {
         initHome();
         showScreen('home', { pushHistory: false });
@@ -180,8 +190,13 @@
     }
 
     if (modeParam === 'yesterday') {
-      initYesterdayView();
-      showScreen('yesterday', { pushHistory: false });
+      var okY = initYesterdayView();
+      if (okY) {
+        showScreen('yesterday', { pushHistory: false });
+      } else {
+        initHome();
+        showScreen('home', { pushHistory: false });
+      }
       return;
     }
 
@@ -205,14 +220,20 @@
     });
     if (homeBtnTimed) homeBtnTimed.addEventListener('click', function() {
       var ok = initTimedPuzzle();
-      if (ok) showScreen('game', { gameMode: 'timed' });
+      if (ok) {
+        showScreen('game', { gameMode: 'timed' });
+        if (pendingTimedEndModal) {
+          pendingTimedEndModal = false;
+          openTimedEndModal();
+        }
+      }
     });
     if (homeBtnCreate) homeBtnCreate.addEventListener('click', function() {
       openModal(modalCreate);
     });
     if (homeBtnYesterday) homeBtnYesterday.addEventListener('click', function() {
-      initYesterdayView();
-      showScreen('yesterday');
+      var okY = initYesterdayView();
+      if (okY) showScreen('yesterday');
     });
   }
 
@@ -328,6 +349,9 @@
       hintsUsed = { revealedWords: [], selectedTwoLetterKey: null };
       timerStartTimestamp = saved.startTimestamp || null;
       timedCompleted = !!saved.completed;
+      // Persist recomputed score/bonus so saved.score doesn't lag if scoring
+      // rules ever change. Mirrors loadDailyState's symmetric save.
+      saveTimedSnapshot();
     } else {
       foundWords = new Set();
       currentScore = 0;
@@ -357,10 +381,12 @@
     }
 
     if (timedCompleted) {
-      // Read-only: show end modal immediately, lock input.
+      // Read-only: lock input and defer end-modal until after caller's
+      // showScreen() runs (showScreen closes any open modal as part of its
+      // screen-switch cleanup, so opening the modal here would be wiped).
       lockTimedInput();
       timerDisplay.textContent = '0:00';
-      openTimedEndModal();
+      pendingTimedEndModal = true;
       return true;
     }
     // Active or not-yet-started: ensure input is unlocked
@@ -368,8 +394,17 @@
     if (timerStartTimestamp != null) {
       var elapsed = Date.now() - timerStartTimestamp;
       if (elapsed >= TIMED_DURATION_MS) {
-        // Time elapsed while away — expire immediately.
-        expireTimer();
+        // Time elapsed while away — mark expired and persist, but defer
+        // opening the end modal (see comment above; showScreen would close it).
+        stopTimerInterval();
+        timedCompleted = true;
+        saveTimedSnapshot();
+        lockTimedInput();
+        if (timerDisplay) {
+          timerDisplay.textContent = '0:00';
+          timerDisplay.classList.add('timer-warning');
+        }
+        pendingTimedEndModal = true;
       } else {
         // Resume ticking
         renderTimer();
@@ -384,6 +419,7 @@
   }
 
   // --- Init: yesterday view ---
+  // Returns true on success, false if generation fails (caller falls back).
   function initYesterdayView() {
     mode = 'daily'; // safe default; we don't actively play in this screen
     var todaySeed = getTodaysSeed();
@@ -394,7 +430,7 @@
     } catch (e) {
       console.error('[bloombert] yesterday generatePuzzle failed:', e);
       showToast('Could not load yesterday');
-      return;
+      return false;
     }
     var yDateKey = seedToDateStr(yesterdaySeed);
     var yState = loadState(yDateKey);
@@ -482,6 +518,7 @@
         yesterdaySummary.textContent = 'You found ' + foundC + ' of ' + yPuzzle.commonWords.length + ' common words';
       }
     }
+    return true;
   }
 
   // --- Daily/custom state load helper (extracted from old init) ---
@@ -623,6 +660,13 @@
 
   function openTimedEndModal() {
     if (!modalTimedEnd) return;
+    // If any other modal is currently open (e.g. user opened stats while the
+    // timer was still ticking), close it first so we don't end up with two
+    // modals stacked at z-index:200 and a doubled modalHistoryCount.
+    var openModals = document.querySelectorAll('.modal:not([hidden])');
+    for (var i = 0; i < openModals.length; i++) {
+      if (openModals[i] !== modalTimedEnd) closeModal(openModals[i]);
+    }
     if (timedEndScore) timedEndScore.textContent = currentScore;
     var commonFound = foundWords.size - bonusCount;
     if (timedEndFound) timedEndFound.textContent = commonFound;
@@ -983,15 +1027,28 @@
         initHome();
         applyShowScreenFromPop('home');
       } else if (st.mode === 'yesterday') {
-        initYesterdayView();
-        applyShowScreenFromPop('yesterday');
+        var okY = initYesterdayView();
+        if (okY) {
+          applyShowScreenFromPop('yesterday');
+        } else {
+          // Generation failed — redirect to home and rewrite URL.
+          initHome();
+          applyShowScreenFromPop('home');
+          history.replaceState({ mode: 'home' }, '', window.location.pathname);
+        }
       } else if (st.mode === 'game') {
         var params = new URLSearchParams(window.location.search);
         if (params.get('p')) {
           var ok = initCustomPuzzle(params.get('p'));
           if (ok) applyShowScreenFromPop('game');
         } else if (params.get('mode') === 'timed') {
-          if (initTimedPuzzle()) applyShowScreenFromPop('game');
+          if (initTimedPuzzle()) {
+            applyShowScreenFromPop('game');
+            if (pendingTimedEndModal) {
+              pendingTimedEndModal = false;
+              openTimedEndModal();
+            }
+          }
         } else {
           initDailyPuzzle();
           applyShowScreenFromPop('game');
@@ -1022,7 +1079,15 @@
   function renderGardenGraph() {
     var container = $('garden-graph');
     if (!container) return;
-    var data = getDailyWordCounts(dateKey, 7, foundWords.size);
+    // In non-daily modes, dateKey is either today's date (timed) or
+    // 'custom-XXXXX' (custom). Either way, the in-memory foundWords reflects
+    // timed/custom progress, not daily — so pass undefined to let the helper
+    // read today's daily state from localStorage like every other day. Use
+    // getTodaysDateKey() so the "today" highlight still lines up.
+    var todayKey = getTodaysDateKey();
+    var data = (mode === 'daily')
+      ? getDailyWordCounts(dateKey, 7, foundWords.size)
+      : getDailyWordCounts(todayKey, 7, undefined);
     var maxWords = Math.max.apply(null, data.map(function(d) { return d.words; }));
     if (maxWords === 0) maxWords = 1;
     var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1032,7 +1097,7 @@
     for (var i = 0; i < data.length; i++) {
       var entry = data[i];
       var pct = Math.round((entry.words / maxWords) * 100);
-      var isToday = entry.date === dateKey;
+      var isToday = entry.date === todayKey;
       var dayDate = new Date(entry.date + 'T00:00:00');
       var dayLabel = dayNames[dayDate.getDay()];
 
