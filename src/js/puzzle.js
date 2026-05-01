@@ -98,6 +98,66 @@ function hasCommonPangram(validWords, letters) {
   return false;
 }
 
+function readNeighborLetters(seed) {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(`bloombert-letters-${seedToDateStr(seed)}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeNeighborLetters(seed, value) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(
+      `bloombert-letters-${seedToDateStr(seed)}`,
+      JSON.stringify(value)
+    );
+  } catch (e) {
+    // ignore (quota or private mode)
+  }
+}
+
+function generatePuzzleLettersOnly(seed) {
+  const cached = readNeighborLetters(seed);
+  if (cached) return cached;
+
+  const vowels = 'aeiou'.split('');
+  const commonConsonants = 'bcdfghlmnprst'.split('');
+  const rareConsonants = 'jkvwxyz'.split('');
+
+  for (let attempt = 0; attempt < 500; attempt++) {
+    const rng = createRNG(seed * 2654435761 + attempt);
+
+    const pool = [];
+    for (const v of vowels) { pool.push(v, v, v); }
+    for (const c of commonConsonants) { pool.push(c, c); }
+    for (const c of rareConsonants) { pool.push(c); }
+
+    const letters = [];
+    const used = new Set();
+    while (letters.length < 7) {
+      const idx = Math.floor(rng.next() * pool.length);
+      const letter = pool[idx];
+      if (!used.has(letter)) {
+        used.add(letter);
+        letters.push(letter);
+      }
+    }
+
+    const keyLetter = letters[0];
+    if (!passesHardLetterRules(letters, keyLetter, rng)) continue;
+
+    const result = { letters, keyLetter };
+    writeNeighborLetters(seed, result);
+    return result;
+  }
+
+  throw new Error(`generatePuzzleLettersOnly: no candidate after 500 attempts for seed ${seed}`);
+}
+
 function generatePuzzle(seed) {
   const isWeekend = isWeekendSeed(seed);
   const minCommon = isWeekend ? 35 : 15;

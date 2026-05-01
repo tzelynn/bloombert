@@ -125,6 +125,15 @@ assertEq(ctx.seedToDateStr(20260101), '2026-01-01', 'seedToDateStr january');
 assertEq(ctx.getPrevDaySeeds(20260503, 3), [20260502, 20260501, 20260430], 'getPrevDaySeeds across month');
 assertEq(ctx.getPrevDaySeeds(20260101, 3), [20251231, 20251230, 20251229], 'getPrevDaySeeds across year');
 
+const fastA = ctx.generatePuzzleLettersOnly(20260501);
+const fastB = ctx.generatePuzzleLettersOnly(20260501);
+assertEq(fastA, fastB, 'fast path deterministic');
+if (fastA.letters.length !== 7) failures.push(`fast path: got ${fastA.letters.length} letters`);
+if (!fastA.letters.includes(fastA.keyLetter)) failures.push(`fast path: keyLetter not in letters`);
+if ('sxzq'.includes(fastA.keyLetter)) failures.push(`fast path: forbidden center ${fastA.keyLetter}`);
+const fv = fastA.letters.filter(l => 'aeiou'.includes(l)).length;
+if (fv < 2 || fv > 3) failures.push(`fast path: vowel count ${fv}`);
+
 // Summary
 console.log(`Generated ${puzzles.length}/${DAYS} puzzles`);
 const centerCounts = {};
