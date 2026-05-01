@@ -27,7 +27,18 @@ npx serve .
 - Every valid word must contain the **centre letter** and use only the 7 given letters
 - Words must be **4+ letters** long (letters can be reused)
 - A **Bloom** word uses all 7 unique letters for a +7 point bonus
-- Puzzles are validated to have ≥15 common words, ≥1 Bloom word, and ≥40 common score
+
+### Quality gates
+
+Each daily puzzle must clear a series of NYT-inspired quality checks before it ships:
+
+- **Letter set**: 2–3 vowels, at most 1 of {J,Q,X,Z}, and E and R never appear together
+- **Centre letter**: never S, X, Z, or Q; J, V, W, Y rare (rejected 95% of the time)
+- **Pangram**: at least one Bloom word must be in the common-word list (no obscure-only pangrams)
+- **3-day variety**: today's centre letter cannot match any of the previous 3 days, and the 7 letters can share at most 5 with any of the previous 3 days
+- **Size**: weekday puzzles need ≥15 common words and ≥40 common score; weekend (Sat/Sun) puzzles need ≥35 common, ≥100 score, and ≥45 total words
+
+If candidates fail repeatedly, a graded fallback ladder relaxes constraints in order (letter overlap → weekend size → centre repeat → common pangram) so generation never throws. `hasBloom` and the hard letter rules are never relaxed.
 
 ### Scoring
 
@@ -58,6 +69,14 @@ npx serve .
 - **Rank thresholds**: Edit the percentages in `computeRankThresholds()` in `scoring.js`.
 - **Word list**: Replace `words.js` with any `Set` of lowercase words. Adjust the filter in `prepare-words.js` (min/max length, character set) and re-run.
 - **Scoring rules**: Edit `scoreWord()` and `isBloom()` in `scoring.js`.
+
+## Tests
+
+```bash
+node scripts/verify-puzzles.js   # exercises 90 days of generation and checks all quality gates
+```
+
+The harness loads the browser scripts into a Node `vm` context with a stub `localStorage`, so it can drive `generatePuzzle(seed)` without code changes to the game. Run it after touching `src/js/puzzle.js`.
 
 ## Word List
 

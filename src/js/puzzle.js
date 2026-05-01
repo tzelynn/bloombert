@@ -20,15 +20,117 @@ function getTodaysDateKey() {
   return `${y}-${m}-${dd}`;
 }
 
-function generatePuzzle(seed) {
+// --- Letter classification helpers ---
+
+function countVowels(letters) {
+  let n = 0;
+  for (const c of letters) {
+    if ('aeiou'.includes(c)) n++;
+  }
+  return n;
+}
+
+function countRareConsonants(letters) {
+  let n = 0;
+  for (const c of letters) {
+    if ('jqxz'.includes(c)) n++;
+  }
+  return n;
+}
+
+function hasERTogether(letters) {
+  let e = false, r = false;
+  for (const c of letters) {
+    if (c === 'e') e = true;
+    if (c === 'r') r = true;
+  }
+  return e && r;
+}
+
+// --- Seed/date helpers ---
+
+function seedToParts(seed) {
+  const y = Math.floor(seed / 10000);
+  const m = Math.floor((seed % 10000) / 100);
+  const d = seed % 100;
+  return { y, m, d };
+}
+
+function seedToDateStr(seed) {
+  const { y, m, d } = seedToParts(seed);
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function isWeekendSeed(seed) {
+  const { y, m, d } = seedToParts(seed);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return dow === 0 || dow === 6;
+}
+
+function getPrevDaySeeds(seed, count) {
+  const { y, m, d } = seedToParts(seed);
+  const base = Date.UTC(y, m - 1, d);
+  const out = [];
+  for (let i = 1; i <= count; i++) {
+    const t = new Date(base - i * 86400000);
+    const ny = t.getUTCFullYear();
+    const nm = String(t.getUTCMonth() + 1).padStart(2, '0');
+    const nd = String(t.getUTCDate()).padStart(2, '0');
+    out.push(parseInt(`${ny}${nm}${nd}`, 10));
+  }
+  return out;
+}
+
+function passesHardLetterRules(letters, keyLetter, rng) {
+  const v = countVowels(letters);
+  if (v < 2 || v > 3) return false;
+  if ('sxzq'.includes(keyLetter)) return false;
+  if ('jvwy'.includes(keyLetter) && rng.next() < 0.95) return false;
+  if (hasERTogether(letters)) return false;
+  if (countRareConsonants(letters) > 1) return false;
+  return true;
+}
+
+function hasCommonPangram(validWords, letters) {
+  for (const w of validWords) {
+    if (isBloom(w, letters) && COMMON_WORDS.has(w)) return true;
+  }
+  return false;
+}
+
+function readNeighborLetters(seed) {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(`bloombert-letters-${seedToDateStr(seed)}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeNeighborLetters(seed, value) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(
+      `bloombert-letters-${seedToDateStr(seed)}`,
+      JSON.stringify(value)
+    );
+  } catch (e) {
+    // ignore (quota or private mode)
+  }
+}
+
+function generatePuzzleLettersOnly(seed) {
+  const cached = readNeighborLetters(seed);
+  if (cached) return cached;
+
   const vowels = 'aeiou'.split('');
   const commonConsonants = 'bcdfghlmnprst'.split('');
   const rareConsonants = 'jkvwxyz'.split('');
 
-  for (let attempt = 0; attempt < 1000; attempt++) {
+  for (let attempt = 0; attempt < 500; attempt++) {
     const rng = createRNG(seed * 2654435761 + attempt);
 
-    // Weighted letter pool: vowels 3×, common consonants 2×, rare 1×
     const pool = [];
     for (const v of vowels) { pool.push(v, v, v); }
     for (const c of commonConsonants) { pool.push(c, c); }
@@ -45,17 +147,96 @@ function generatePuzzle(seed) {
       }
     }
 
-    // Avoid Q, X, Z as key letter — skip and retry
-    // S as center letter makes puzzles too easy (plurals); skip 90% of the time
     const keyLetter = letters[0];
-    if ('qxz'.includes(keyLetter)) continue;
-    if (keyLetter === 's' && rng.next() < 0.9) continue;
+    if (!passesHardLetterRules(letters, keyLetter, rng)) continue;
+
+    const result = { letters, keyLetter };
+    writeNeighborLetters(seed, result);
+    return result;
+  }
+
+  throw new Error(`generatePuzzleLettersOnly: no candidate after 500 attempts for seed ${seed}`);
+}
+
+function passesLookback(letters, keyLetter, prevDays, opts) {
+  for (const prev of prevDays) {
+    if (!opts.dropCenter && prev.keyLetter === keyLetter) return false;
+    if (!opts.dropOverlap) {
+      let overlap = 0;
+      for (const l of letters) {
+        if (prev.letters.includes(l)) overlap++;
+      }
+      if (overlap >= 6) return false;
+    }
+  }
+  return true;
+}
+
+function generatePuzzle(seed) {
+  const isWeekend = isWeekendSeed(seed);
+  const minCommon = isWeekend ? 35 : 15;
+  const minCommonScore = isWeekend ? 100 : 40;
+  const minTotal = isWeekend ? 45 : 0;
+
+  const prevDays = getPrevDaySeeds(seed, 3).map(generatePuzzleLettersOnly);
+
+  const vowels = 'aeiou'.split('');
+  const commonConsonants = 'bcdfghlmnprst'.split('');
+  const rareConsonants = 'jkvwxyz'.split('');
+
+  let dropOverlap = false;
+  let dropWeekendGates = false;
+  let dropCenterRepeat = false;
+  let dropPangram = false;
+
+  for (let attempt = 0; attempt < 2500; attempt++) {
+    if (attempt === 800 && !dropOverlap) {
+      dropOverlap = true;
+      console.warn(`[bloombert] dropping letter-overlap rule at attempt ${attempt}, seed ${seed}`);
+    }
+    if (attempt === 1100 && isWeekend && !dropWeekendGates) {
+      dropWeekendGates = true;
+      console.warn(`[bloombert] dropping weekend size gates at attempt ${attempt}, seed ${seed}`);
+    }
+    if (attempt === 1300 && !dropCenterRepeat) {
+      dropCenterRepeat = true;
+      console.warn(`[bloombert] dropping center-repeat rule at attempt ${attempt}, seed ${seed}`);
+    }
+    if (attempt === 1500 && !dropPangram) {
+      dropPangram = true;
+      console.warn(`[bloombert] dropping common-pangram requirement at attempt ${attempt}, seed ${seed}`);
+    }
+
+    const rng = createRNG(seed * 2654435761 + attempt);
+
+    const pool = [];
+    for (const v of vowels) { pool.push(v, v, v); }
+    for (const c of commonConsonants) { pool.push(c, c); }
+    for (const c of rareConsonants) { pool.push(c); }
+
+    const letters = [];
+    const used = new Set();
+    while (letters.length < 7) {
+      const idx = Math.floor(rng.next() * pool.length);
+      const letter = pool[idx];
+      if (!used.has(letter)) {
+        used.add(letter);
+        letters.push(letter);
+      }
+    }
+
+    const keyLetter = letters[0];
+    if (!passesHardLetterRules(letters, keyLetter, rng)) continue;
+    if (!passesLookback(letters, keyLetter, prevDays, { dropCenter: dropCenterRepeat, dropOverlap })) continue;
 
     const validWords = getAllValidWords(letters, keyLetter);
     const commonWords = validWords.filter(w => COMMON_WORDS.has(w));
     const bonusWords = validWords.filter(w => !COMMON_WORDS.has(w));
 
-    if (commonWords.length < 15) continue;
+    const activeMinCommon = dropWeekendGates ? 15 : minCommon;
+    const activeMinScore = dropWeekendGates ? 40 : minCommonScore;
+    const activeMinTotal = dropWeekendGates ? 0 : minTotal;
+    if (commonWords.length < activeMinCommon) continue;
 
     let commonScore = 0;
     let totalScore = 0;
@@ -69,17 +250,14 @@ function generatePuzzle(seed) {
     }
 
     if (!hasBloom) continue;
-    if (commonScore < 40) continue;
+    if (!dropPangram && !hasCommonPangram(validWords, letters)) continue;
+    if (commonScore < activeMinScore) continue;
+    if (validWords.length < activeMinTotal) continue;
 
-    // Difficulty based on common words (the reachable pool)
     let difficulty;
-    if (commonWords.length > 40 && commonScore > 120) {
-      difficulty = 'Easy';
-    } else if (commonWords.length < 25 || commonScore < 60) {
-      difficulty = 'Hard';
-    } else {
-      difficulty = 'Medium';
-    }
+    if (commonWords.length > 40 && commonScore > 120) difficulty = 'Easy';
+    else if (commonWords.length < 25 || commonScore < 60) difficulty = 'Hard';
+    else difficulty = 'Medium';
 
     return {
       letters,
@@ -94,7 +272,7 @@ function generatePuzzle(seed) {
     };
   }
 
-  throw new Error('Could not generate a valid puzzle after 1000 attempts');
+  throw new Error('Could not generate a valid puzzle after 2500 attempts');
 }
 
 function getAllValidWords(letters, keyLetter) {
