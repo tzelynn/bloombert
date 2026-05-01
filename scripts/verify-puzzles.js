@@ -86,6 +86,18 @@ for (const { dateStr, p } of puzzles) {
   if (!hasCommon) failures.push(`${dateStr}: no common pangram (only obscure)`);
 }
 
+for (const { dateStr, dow, p } of puzzles) {
+  const isWeekend = dow === 0 || dow === 6;
+  if (isWeekend) {
+    if (p.commonWords.length < 35) failures.push(`${dateStr}: weekend common ${p.commonWords.length} < 35`);
+    if (p.commonScore < 100) failures.push(`${dateStr}: weekend score ${p.commonScore} < 100`);
+    if (p.validWords.length < 45) failures.push(`${dateStr}: weekend total ${p.validWords.length} < 45`);
+  } else {
+    if (p.commonWords.length < 15) failures.push(`${dateStr}: weekday common ${p.commonWords.length} < 15`);
+    if (p.commonScore < 40) failures.push(`${dateStr}: weekday score ${p.commonScore} < 40`);
+  }
+}
+
 // --- Helper unit assertions ---
 function assertEq(actual, expected, label) {
   const a = JSON.stringify(actual);

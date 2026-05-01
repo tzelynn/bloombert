@@ -99,6 +99,11 @@ function hasCommonPangram(validWords, letters) {
 }
 
 function generatePuzzle(seed) {
+  const isWeekend = isWeekendSeed(seed);
+  const minCommon = isWeekend ? 35 : 15;
+  const minCommonScore = isWeekend ? 100 : 40;
+  const minTotal = isWeekend ? 45 : 0;
+
   const vowels = 'aeiou'.split('');
   const commonConsonants = 'bcdfghlmnprst'.split('');
   const rareConsonants = 'jkvwxyz'.split('');
@@ -129,7 +134,7 @@ function generatePuzzle(seed) {
     const commonWords = validWords.filter(w => COMMON_WORDS.has(w));
     const bonusWords = validWords.filter(w => !COMMON_WORDS.has(w));
 
-    if (commonWords.length < 15) continue;
+    if (commonWords.length < minCommon) continue;
 
     let commonScore = 0;
     let totalScore = 0;
@@ -144,7 +149,8 @@ function generatePuzzle(seed) {
 
     if (!hasBloom) continue;
     if (!hasCommonPangram(validWords, letters)) continue;
-    if (commonScore < 40) continue;
+    if (commonScore < minCommonScore) continue;
+    if (validWords.length < minTotal) continue;
 
     let difficulty;
     if (commonWords.length > 40 && commonScore > 120) difficulty = 'Easy';
