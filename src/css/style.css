@@ -1945,25 +1945,3 @@ body {
   color: var(--warm-grey);
 }
 
-#modal-timed-end .primary-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--blue-sat);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-#modal-timed-end .primary-btn:hover {
-  background: #4a93c4;
-}
-
-#modal-timed-end .primary-btn:focus-visible {
-  outline: 2px solid var(--blue-sat);
-  outline-offset: 2px;
-}
