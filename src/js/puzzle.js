@@ -158,11 +158,27 @@ function generatePuzzleLettersOnly(seed) {
   throw new Error(`generatePuzzleLettersOnly: no candidate after 500 attempts for seed ${seed}`);
 }
 
+function passesLookback(letters, keyLetter, prevDays, opts) {
+  for (const prev of prevDays) {
+    if (!opts.dropCenter && prev.keyLetter === keyLetter) return false;
+    if (!opts.dropOverlap) {
+      let overlap = 0;
+      for (const l of letters) {
+        if (prev.letters.includes(l)) overlap++;
+      }
+      if (overlap >= 6) return false;
+    }
+  }
+  return true;
+}
+
 function generatePuzzle(seed) {
   const isWeekend = isWeekendSeed(seed);
   const minCommon = isWeekend ? 35 : 15;
   const minCommonScore = isWeekend ? 100 : 40;
   const minTotal = isWeekend ? 45 : 0;
+
+  const prevDays = getPrevDaySeeds(seed, 3).map(generatePuzzleLettersOnly);
 
   const vowels = 'aeiou'.split('');
   const commonConsonants = 'bcdfghlmnprst'.split('');
@@ -189,6 +205,7 @@ function generatePuzzle(seed) {
 
     const keyLetter = letters[0];
     if (!passesHardLetterRules(letters, keyLetter, rng)) continue;
+    if (!passesLookback(letters, keyLetter, prevDays, { dropCenter: false, dropOverlap: false })) continue;
 
     const validWords = getAllValidWords(letters, keyLetter);
     const commonWords = validWords.filter(w => COMMON_WORDS.has(w));

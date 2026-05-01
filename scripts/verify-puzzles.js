@@ -98,6 +98,21 @@ for (const { dateStr, dow, p } of puzzles) {
   }
 }
 
+// --- Lookback assertions (vs fast-path approximation, matching impl behavior) ---
+for (const { dateStr, seed, p } of puzzles) {
+  const prevSeeds = ctx.getPrevDaySeeds(seed, 3);
+  for (let j = 0; j < prevSeeds.length; j++) {
+    const prev = ctx.generatePuzzleLettersOnly(prevSeeds[j]);
+    if (prev.keyLetter === p.keyLetter) {
+      failures.push(`${dateStr}: center matches ${j + 1}-day-prior fast-path (${p.keyLetter})`);
+    }
+    const overlap = p.letters.filter(l => prev.letters.includes(l)).length;
+    if (overlap >= 6) {
+      failures.push(`${dateStr}: ${overlap}-letter overlap with ${j + 1}-day-prior fast-path`);
+    }
+  }
+}
+
 // --- Helper unit assertions ---
 function assertEq(actual, expected, label) {
   const a = JSON.stringify(actual);
