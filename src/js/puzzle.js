@@ -47,6 +47,40 @@ function hasERTogether(letters) {
   return e && r;
 }
 
+// --- Seed/date helpers ---
+
+function seedToParts(seed) {
+  const y = Math.floor(seed / 10000);
+  const m = Math.floor((seed % 10000) / 100);
+  const d = seed % 100;
+  return { y, m, d };
+}
+
+function seedToDateStr(seed) {
+  const { y, m, d } = seedToParts(seed);
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function isWeekendSeed(seed) {
+  const { y, m, d } = seedToParts(seed);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return dow === 0 || dow === 6;
+}
+
+function getPrevDaySeeds(seed, count) {
+  const { y, m, d } = seedToParts(seed);
+  const base = Date.UTC(y, m - 1, d);
+  const out = [];
+  for (let i = 1; i <= count; i++) {
+    const t = new Date(base - i * 86400000);
+    const ny = t.getUTCFullYear();
+    const nm = String(t.getUTCMonth() + 1).padStart(2, '0');
+    const nd = String(t.getUTCDate()).padStart(2, '0');
+    out.push(parseInt(`${ny}${nm}${nd}`, 10));
+  }
+  return out;
+}
+
 function generatePuzzle(seed) {
   const vowels = 'aeiou'.split('');
   const commonConsonants = 'bcdfghlmnprst'.split('');

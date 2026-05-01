@@ -67,19 +67,25 @@ function assertEq(actual, expected, label) {
   if (a !== e) failures.push(`helper ${label}: got ${a}, expected ${e}`);
 }
 
-function tryAssertEq(fn, expected, label) {
-  let actual;
-  try { actual = fn(); } catch (e) { actual = undefined; }
-  assertEq(actual, expected, label);
-}
+assertEq(ctx.countVowels(['a','b','e','c','i','o','u']), 5, 'countVowels(5)');
+assertEq(ctx.countVowels(['b','c','d','f','g','h','j']), 0, 'countVowels(0)');
+assertEq(ctx.countRareConsonants(['j','q','x','z','a','e','i']), 4, 'countRareConsonants');
+assertEq(ctx.countRareConsonants(['a','b','c','d','e','f','g']), 0, 'countRareConsonants zero');
+assertEq(ctx.hasERTogether(['a','e','r','b','c','d','f']), true, 'hasERTogether yes');
+assertEq(ctx.hasERTogether(['a','e','b','c','d','f','g']), false, 'hasERTogether no e');
+assertEq(ctx.hasERTogether(['a','r','b','c','d','f','g']), false, 'hasERTogether no r');
 
-tryAssertEq(() => ctx.countVowels(['a','b','e','c','i','o','u']), 5, 'countVowels(5)');
-tryAssertEq(() => ctx.countVowels(['b','c','d','f','g','h','j']), 0, 'countVowels(0)');
-tryAssertEq(() => ctx.countRareConsonants(['j','q','x','z','a','e','i']), 4, 'countRareConsonants');
-tryAssertEq(() => ctx.countRareConsonants(['a','b','c','d','e','f','g']), 0, 'countRareConsonants zero');
-tryAssertEq(() => ctx.hasERTogether(['a','e','r','b','c','d','f']), true, 'hasERTogether yes');
-tryAssertEq(() => ctx.hasERTogether(['a','e','b','c','d','f','g']), false, 'hasERTogether no e');
-tryAssertEq(() => ctx.hasERTogether(['a','r','b','c','d','f','g']), false, 'hasERTogether no r');
+// 2026-05-01 is a Friday (UTC); 2026-05-02 is a Saturday.
+assertEq(ctx.isWeekendSeed(20260501), false, 'isWeekendSeed Fri');
+assertEq(ctx.isWeekendSeed(20260502), true, 'isWeekendSeed Sat');
+assertEq(ctx.isWeekendSeed(20260503), true, 'isWeekendSeed Sun');
+assertEq(ctx.isWeekendSeed(20260504), false, 'isWeekendSeed Mon');
+
+assertEq(ctx.seedToDateStr(20260501), '2026-05-01', 'seedToDateStr');
+assertEq(ctx.seedToDateStr(20260101), '2026-01-01', 'seedToDateStr january');
+
+assertEq(ctx.getPrevDaySeeds(20260503, 3), [20260502, 20260501, 20260430], 'getPrevDaySeeds across month');
+assertEq(ctx.getPrevDaySeeds(20260101, 3), [20251231, 20251230, 20251229], 'getPrevDaySeeds across year');
 
 // Summary
 console.log(`Generated ${puzzles.length}/${DAYS} puzzles`);
