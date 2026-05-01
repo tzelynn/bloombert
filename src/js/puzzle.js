@@ -81,15 +81,24 @@ function getPrevDaySeeds(seed, count) {
   return out;
 }
 
+function passesHardLetterRules(letters, keyLetter, rng) {
+  const v = countVowels(letters);
+  if (v < 2 || v > 3) return false;
+  if ('sxzq'.includes(keyLetter)) return false;
+  if ('jvwy'.includes(keyLetter) && rng.next() < 0.95) return false;
+  if (hasERTogether(letters)) return false;
+  if (countRareConsonants(letters) > 1) return false;
+  return true;
+}
+
 function generatePuzzle(seed) {
   const vowels = 'aeiou'.split('');
   const commonConsonants = 'bcdfghlmnprst'.split('');
   const rareConsonants = 'jkvwxyz'.split('');
 
-  for (let attempt = 0; attempt < 1000; attempt++) {
+  for (let attempt = 0; attempt < 1500; attempt++) {
     const rng = createRNG(seed * 2654435761 + attempt);
 
-    // Weighted letter pool: vowels 3×, common consonants 2×, rare 1×
     const pool = [];
     for (const v of vowels) { pool.push(v, v, v); }
     for (const c of commonConsonants) { pool.push(c, c); }
@@ -106,11 +115,8 @@ function generatePuzzle(seed) {
       }
     }
 
-    // Avoid Q, X, Z as key letter — skip and retry
-    // S as center letter makes puzzles too easy (plurals); skip 90% of the time
     const keyLetter = letters[0];
-    if ('qxz'.includes(keyLetter)) continue;
-    if (keyLetter === 's' && rng.next() < 0.9) continue;
+    if (!passesHardLetterRules(letters, keyLetter, rng)) continue;
 
     const validWords = getAllValidWords(letters, keyLetter);
     const commonWords = validWords.filter(w => COMMON_WORDS.has(w));
@@ -132,15 +138,10 @@ function generatePuzzle(seed) {
     if (!hasBloom) continue;
     if (commonScore < 40) continue;
 
-    // Difficulty based on common words (the reachable pool)
     let difficulty;
-    if (commonWords.length > 40 && commonScore > 120) {
-      difficulty = 'Easy';
-    } else if (commonWords.length < 25 || commonScore < 60) {
-      difficulty = 'Hard';
-    } else {
-      difficulty = 'Medium';
-    }
+    if (commonWords.length > 40 && commonScore > 120) difficulty = 'Easy';
+    else if (commonWords.length < 25 || commonScore < 60) difficulty = 'Hard';
+    else difficulty = 'Medium';
 
     return {
       letters,
@@ -155,7 +156,7 @@ function generatePuzzle(seed) {
     };
   }
 
-  throw new Error('Could not generate a valid puzzle after 1000 attempts');
+  throw new Error('Could not generate a valid puzzle after 1500 attempts');
 }
 
 function getAllValidWords(letters, keyLetter) {

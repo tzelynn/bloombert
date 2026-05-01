@@ -60,6 +60,19 @@ for (let i = 0; i < DAYS; i++) {
   puzzles.push({ dateStr, seed, dow: date.getUTCDay(), p });
 }
 
+// --- Per-puzzle assertions (hard letter-set rules) ---
+for (const { dateStr, p } of puzzles) {
+  const v = p.letters.filter(l => 'aeiou'.includes(l)).length;
+  if (v < 2 || v > 3) failures.push(`${dateStr}: vowel count ${v} not in [2,3]`);
+
+  if ('sxzq'.includes(p.keyLetter)) failures.push(`${dateStr}: forbidden center ${p.keyLetter}`);
+
+  if (p.letters.includes('e') && p.letters.includes('r')) failures.push(`${dateStr}: E+R together`);
+
+  const rare = p.letters.filter(l => 'jqxz'.includes(l)).length;
+  if (rare > 1) failures.push(`${dateStr}: ${rare} rare consonants (max 1)`);
+}
+
 // --- Helper unit assertions ---
 function assertEq(actual, expected, label) {
   const a = JSON.stringify(actual);
