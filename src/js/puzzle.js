@@ -91,6 +91,13 @@ function passesHardLetterRules(letters, keyLetter, rng) {
   return true;
 }
 
+function hasCommonPangram(validWords, letters) {
+  for (const w of validWords) {
+    if (isBloom(w, letters) && COMMON_WORDS.has(w)) return true;
+  }
+  return false;
+}
+
 function generatePuzzle(seed) {
   const vowels = 'aeiou'.split('');
   const commonConsonants = 'bcdfghlmnprst'.split('');
@@ -136,6 +143,7 @@ function generatePuzzle(seed) {
     }
 
     if (!hasBloom) continue;
+    if (!hasCommonPangram(validWords, letters)) continue;
     if (commonScore < 40) continue;
 
     let difficulty;

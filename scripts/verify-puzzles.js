@@ -30,6 +30,10 @@ for (const f of FILES) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
 }
 
+// `const` declarations don't attach to the vm context, so pull these out explicitly.
+const COMMON_WORDS = vm.runInContext('COMMON_WORDS', ctx);
+const WORD_LIST = vm.runInContext('WORD_LIST', ctx);
+
 function dateToSeed(date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -71,6 +75,15 @@ for (const { dateStr, p } of puzzles) {
 
   const rare = p.letters.filter(l => 'jqxz'.includes(l)).length;
   if (rare > 1) failures.push(`${dateStr}: ${rare} rare consonants (max 1)`);
+}
+
+for (const { dateStr, p } of puzzles) {
+  const hasCommon = p.validWords.some(w =>
+    new Set(w).size === 7 &&
+    p.letters.every(l => w.includes(l)) &&
+    COMMON_WORDS.has(w)
+  );
+  if (!hasCommon) failures.push(`${dateStr}: no common pangram (only obscure)`);
 }
 
 // --- Helper unit assertions ---
