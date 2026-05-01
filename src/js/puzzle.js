@@ -184,7 +184,29 @@ function generatePuzzle(seed) {
   const commonConsonants = 'bcdfghlmnprst'.split('');
   const rareConsonants = 'jkvwxyz'.split('');
 
-  for (let attempt = 0; attempt < 1500; attempt++) {
+  let dropOverlap = false;
+  let dropWeekendGates = false;
+  let dropCenterRepeat = false;
+  let dropPangram = false;
+
+  for (let attempt = 0; attempt < 2500; attempt++) {
+    if (attempt === 800 && !dropOverlap) {
+      dropOverlap = true;
+      console.warn(`[bloombert] dropping letter-overlap rule at attempt ${attempt}, seed ${seed}`);
+    }
+    if (attempt === 1100 && isWeekend && !dropWeekendGates) {
+      dropWeekendGates = true;
+      console.warn(`[bloombert] dropping weekend size gates at attempt ${attempt}, seed ${seed}`);
+    }
+    if (attempt === 1300 && !dropCenterRepeat) {
+      dropCenterRepeat = true;
+      console.warn(`[bloombert] dropping center-repeat rule at attempt ${attempt}, seed ${seed}`);
+    }
+    if (attempt === 1500 && !dropPangram) {
+      dropPangram = true;
+      console.warn(`[bloombert] dropping common-pangram requirement at attempt ${attempt}, seed ${seed}`);
+    }
+
     const rng = createRNG(seed * 2654435761 + attempt);
 
     const pool = [];
@@ -205,13 +227,16 @@ function generatePuzzle(seed) {
 
     const keyLetter = letters[0];
     if (!passesHardLetterRules(letters, keyLetter, rng)) continue;
-    if (!passesLookback(letters, keyLetter, prevDays, { dropCenter: false, dropOverlap: false })) continue;
+    if (!passesLookback(letters, keyLetter, prevDays, { dropCenter: dropCenterRepeat, dropOverlap })) continue;
 
     const validWords = getAllValidWords(letters, keyLetter);
     const commonWords = validWords.filter(w => COMMON_WORDS.has(w));
     const bonusWords = validWords.filter(w => !COMMON_WORDS.has(w));
 
-    if (commonWords.length < minCommon) continue;
+    const activeMinCommon = dropWeekendGates ? 15 : minCommon;
+    const activeMinScore = dropWeekendGates ? 40 : minCommonScore;
+    const activeMinTotal = dropWeekendGates ? 0 : minTotal;
+    if (commonWords.length < activeMinCommon) continue;
 
     let commonScore = 0;
     let totalScore = 0;
@@ -225,9 +250,9 @@ function generatePuzzle(seed) {
     }
 
     if (!hasBloom) continue;
-    if (!hasCommonPangram(validWords, letters)) continue;
-    if (commonScore < minCommonScore) continue;
-    if (validWords.length < minTotal) continue;
+    if (!dropPangram && !hasCommonPangram(validWords, letters)) continue;
+    if (commonScore < activeMinScore) continue;
+    if (validWords.length < activeMinTotal) continue;
 
     let difficulty;
     if (commonWords.length > 40 && commonScore > 120) difficulty = 'Easy';
@@ -247,7 +272,7 @@ function generatePuzzle(seed) {
     };
   }
 
-  throw new Error('Could not generate a valid puzzle after 1500 attempts');
+  throw new Error('Could not generate a valid puzzle after 2500 attempts');
 }
 
 function getAllValidWords(letters, keyLetter) {

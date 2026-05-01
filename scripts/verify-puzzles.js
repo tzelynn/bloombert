@@ -46,7 +46,7 @@ function dowName(date) {
 }
 
 const START = new Date(Date.UTC(2026, 4, 1)); // 2026-05-01
-const DAYS = 30;
+const DAYS = 90;
 const failures = [];
 const puzzles = [];
 
