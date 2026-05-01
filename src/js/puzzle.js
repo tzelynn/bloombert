@@ -12,6 +12,12 @@ function getTodaysSeed() {
   return parseInt(`${y}${m}${dd}`, 10);
 }
 
+// Distinct from the daily seed by an offset that won't collide with any
+// plausible YYYYMMDD value through year 9999 (max ~9999_12_31 ≈ 1e8).
+function getTodaysTimedSeed() {
+  return getTodaysSeed() + 100000000;
+}
+
 function getTodaysDateKey() {
   const d = getPuzzleDate();
   const y = d.getFullYear();
@@ -273,6 +279,76 @@ function generatePuzzle(seed) {
   }
 
   throw new Error('Could not generate a valid puzzle after 2500 attempts');
+}
+
+// Timed-mode generator: same letter-picking loop as generatePuzzle, but with
+// loose quality gates (hard letter rules + hasBloom only). Skips lookback,
+// size gates, and the common-pangram requirement so puzzles are easy to find.
+function generateTimedPuzzle(seed) {
+  const vowels = 'aeiou'.split('');
+  const commonConsonants = 'bcdfghlmnprst'.split('');
+  const rareConsonants = 'jkvwxyz'.split('');
+
+  for (let attempt = 0; attempt < 1000; attempt++) {
+    const rng = createRNG(seed * 2654435761 + attempt);
+
+    const pool = [];
+    for (const v of vowels) { pool.push(v, v, v); }
+    for (const c of commonConsonants) { pool.push(c, c); }
+    for (const c of rareConsonants) { pool.push(c); }
+
+    const letters = [];
+    const used = new Set();
+    while (letters.length < 7) {
+      const idx = Math.floor(rng.next() * pool.length);
+      const letter = pool[idx];
+      if (!used.has(letter)) {
+        used.add(letter);
+        letters.push(letter);
+      }
+    }
+
+    const keyLetter = letters[0];
+    if (!passesHardLetterRules(letters, keyLetter, rng)) continue;
+
+    const validWords = getAllValidWords(letters, keyLetter);
+    const commonWords = validWords.filter(w => COMMON_WORDS.has(w));
+    const bonusWords = validWords.filter(w => !COMMON_WORDS.has(w));
+
+    let commonScore = 0;
+    let totalScore = 0;
+    let hasBloom = false;
+    for (const word of validWords) {
+      const bonus = !COMMON_WORDS.has(word);
+      const pts = scoreWord(word, letters, bonus);
+      totalScore += pts;
+      if (!bonus) commonScore += pts;
+      if (isBloom(word, letters)) hasBloom = true;
+    }
+
+    if (!hasBloom) continue;
+
+    // Reuse daily's size-based difficulty heuristic so downstream UI works uniformly.
+    let difficulty;
+    if (commonWords.length > 40 && commonScore > 120) difficulty = 'Easy';
+    else if (commonWords.length < 25 || commonScore < 60) difficulty = 'Hard';
+    else difficulty = 'Medium';
+
+    return {
+      letters,
+      keyLetter,
+      validWords,
+      commonWords,
+      bonusWords,
+      commonScore,
+      totalScore,
+      hasBloom,
+      difficulty,
+      mode: 'timed',
+    };
+  }
+
+  throw new Error('Could not generate a valid timed puzzle after 1000 attempts');
 }
 
 function getAllValidWords(letters, keyLetter) {

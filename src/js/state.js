@@ -24,6 +24,24 @@ function saveState(dateKey, state) {
   }
 }
 
+function loadTimedState(dateKey) {
+  try {
+    const raw = localStorage.getItem(`bloombert-timed-state-${dateKey}`);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveTimedState(dateKey, state) {
+  try {
+    localStorage.setItem(`bloombert-timed-state-${dateKey}`, JSON.stringify(state));
+  } catch (e) {
+    // quota exceeded or other error
+  }
+}
+
 function loadStats() {
   try {
     const raw = localStorage.getItem('bloombert-stats');
