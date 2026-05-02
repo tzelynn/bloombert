@@ -290,7 +290,7 @@ function generateTimedPuzzle(seed) {
   const rareConsonants = 'jkvwxyz'.split('');
 
   for (let attempt = 0; attempt < 1000; attempt++) {
-    const rng = createRNG(seed * 2654435761 + attempt);
+    const rng = createRNG(Math.imul(seed, 2654435761) + attempt);
 
     const pool = [];
     for (const v of vowels) { pool.push(v, v, v); }

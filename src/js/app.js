@@ -35,6 +35,10 @@
   // logic. Symmetric: set in one place, consumed (and reset) in each caller.
   let pendingTimedEndModal = false;
 
+  // Countdown state (timed mode — fresh puzzle only)
+  let countdownActive = false;
+  let countdownTimeout = null;
+
   // --- Icon SVGs ---
   const ICON_CLIPBOARD = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
   const ICON_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -101,6 +105,8 @@
   const yesterdayPangrams = $('yesterday-pangrams');
   const yesterdayWordsList = $('yesterday-words-list');
   const yesterdaySummary = $('yesterday-summary');
+  const countdownOverlay = $('countdown-overlay');
+  const countdownNum = $('countdown-number');
   const modalTimedEnd = $('modal-timed-end');
   const timedEndScore = $('timed-end-score');
   const timedEndFound = $('timed-end-found');
@@ -133,6 +139,7 @@
     // tick() will catch up if/when the user returns.
     if (currentScreen === 'game' && name !== 'game' && mode === 'timed') {
       stopTimerInterval();
+      stopCountdown();
     }
 
     screenHome.hidden = name !== 'home';
@@ -244,6 +251,7 @@
     customPuzzleCode = null;
     timedCompleted = false;
     stopTimerInterval();
+    stopCountdown();
     unlockTimedInput();
     if (timerDisplay) timerDisplay.hidden = true;
     if (timerDisplay) timerDisplay.classList.remove('timer-warning');
@@ -282,6 +290,7 @@
 
     timedCompleted = false;
     stopTimerInterval();
+    stopCountdown();
     unlockTimedInput();
     if (timerDisplay) timerDisplay.hidden = true;
     if (timerDisplay) timerDisplay.classList.remove('timer-warning');
@@ -321,6 +330,7 @@
     isCustomPuzzle = false;
     customPuzzleCode = null;
     stopTimerInterval();
+    stopCountdown();
     if (btnHintsInline) btnHintsInline.hidden = true;
 
     var seed = getTodaysTimedSeed();
@@ -411,8 +421,8 @@
         startTimerInterval();
       }
     } else {
-      // Fresh timed puzzle — start the timer immediately on display.
-      startTimer();
+      // Fresh timed puzzle — show countdown, then start the timer.
+      startCountdown();
     }
 
     return true;
@@ -612,6 +622,47 @@
     startTimerInterval();
   }
 
+  function startCountdown() {
+    if (!countdownOverlay || !countdownNum) {
+      startTimer();
+      return;
+    }
+    countdownActive = true;
+    lockTimedInput();
+    var count = 3;
+    countdownNum.textContent = count;
+    countdownOverlay.hidden = false;
+    countdownNum.classList.remove('countdown-pop');
+    void countdownNum.offsetWidth;
+    countdownNum.classList.add('countdown-pop');
+
+    function step() {
+      count--;
+      if (count <= 0) {
+        countdownOverlay.hidden = true;
+        countdownActive = false;
+        unlockTimedInput();
+        startTimer();
+        return;
+      }
+      countdownNum.classList.remove('countdown-pop');
+      void countdownNum.offsetWidth;
+      countdownNum.classList.add('countdown-pop');
+      countdownNum.textContent = count;
+      countdownTimeout = setTimeout(step, 1000);
+    }
+    countdownTimeout = setTimeout(step, 1000);
+  }
+
+  function stopCountdown() {
+    if (countdownTimeout) {
+      clearTimeout(countdownTimeout);
+      countdownTimeout = null;
+    }
+    countdownActive = false;
+    if (countdownOverlay) countdownOverlay.hidden = true;
+  }
+
   function startTimerInterval() {
     if (timerInterval) return;
     timerInterval = setInterval(tick, TIMER_TICK_MS);
@@ -785,13 +836,13 @@
 
   // --- Input handling ---
   function appendLetter(letter) {
-    if (mode === 'timed' && timedCompleted) return;
+    if (mode === 'timed' && (timedCompleted || countdownActive)) return;
     currentInput += letter.toLowerCase();
     renderInput();
   }
 
   function deleteLetter() {
-    if (mode === 'timed' && timedCompleted) return;
+    if (mode === 'timed' && (timedCompleted || countdownActive)) return;
     if (currentInput.length > 0) {
       currentInput = currentInput.slice(0, -1);
       renderInput();
@@ -805,7 +856,7 @@
 
   // --- Submit ---
   function submitGuess() {
-    if (mode === 'timed' && timedCompleted) return;
+    if (mode === 'timed' && (timedCompleted || countdownActive)) return;
     const word = currentInput.toLowerCase();
     if (word.length === 0) return;
 
@@ -907,7 +958,7 @@
 
   // --- Shuffle ---
   function shuffleOuter() {
-    if (mode === 'timed' && timedCompleted) return;
+    if (mode === 'timed' && (timedCompleted || countdownActive)) return;
     const outer = puzzle.letters.slice(1);
     for (let i = outer.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -1055,6 +1106,7 @@
   function applyShowScreenFromPop(name) {
     if (currentScreen === 'game' && name !== 'game' && mode === 'timed') {
       stopTimerInterval();
+      stopCountdown();
     }
     screenHome.hidden = name !== 'home';
     screenGame.hidden = name !== 'game';
@@ -1475,7 +1527,7 @@
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (document.querySelector('.modal:not([hidden])')) return;
       if (currentScreen !== 'game') return;
-      if (mode === 'timed' && timedCompleted) return;
+      if (mode === 'timed' && (timedCompleted || countdownActive)) return;
 
       if (e.key === 'Backspace') {
         e.preventDefault();
@@ -1490,7 +1542,7 @@
 
     // Hex tile clicks
     hexGrid.addEventListener('click', (e) => {
-      if (mode === 'timed' && timedCompleted) return;
+      if (mode === 'timed' && (timedCompleted || countdownActive)) return;
       const tile = e.target.closest('.hex-tile');
       if (tile && tile.dataset.letter) {
         appendLetter(tile.dataset.letter);
