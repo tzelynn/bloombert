@@ -1921,6 +1921,44 @@ body {
 }
 
 /* ============================================================
+ * Countdown overlay (timed mode)
+ * ============================================================ */
+
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(253, 250, 245, 0.88);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.countdown-overlay[hidden] {
+  display: none;
+}
+
+.countdown-number {
+  font-family: var(--font-display);
+  font-size: 96px;
+  font-weight: 700;
+  color: var(--mint);
+  line-height: 1;
+}
+
+.countdown-number.countdown-pop {
+  animation: countdown-pop 0.9s ease-out forwards;
+}
+
+@keyframes countdown-pop {
+  0%   { transform: scale(1.5); opacity: 0; }
+  15%  { transform: scale(1);   opacity: 1; }
+  70%  { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0; }
+}
+
+/* ============================================================
  * Timed-end modal
  * ============================================================ */
 .timed-end-summary {
