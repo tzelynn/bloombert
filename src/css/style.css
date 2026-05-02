@@ -80,7 +80,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 6px 0;
   flex-shrink: 0;
 }
 
@@ -175,7 +175,7 @@ body {
 
 /* Rank section */
 .rank-section {
-  padding: 8px 0;
+  padding: 4px 0 6px;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -247,7 +247,7 @@ body {
 
 /* Found words section */
 .found-section {
-  padding: 12px 0;
+  padding: 6px 0;
   flex-shrink: 0;
 }
 
@@ -414,7 +414,7 @@ body {
 /* Input display */
 .input-display {
   text-align: center;
-  height: 52px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -423,7 +423,7 @@ body {
 
 .input-text {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--charcoal);
   letter-spacing: 4px;
@@ -433,7 +433,7 @@ body {
 .input-caret {
   display: inline-block;
   width: 2px;
-  height: 32px;
+  height: 26px;
   background: var(--blue-sat);
   margin-left: 2px;
   animation: blink 1s step-end infinite;
@@ -445,7 +445,7 @@ body {
 
 /* Flower grid */
 .hex-grid-section {
-  padding: 8px 0;
+  padding: 4px 0;
   flex: 1 1 auto;
   display: flex;
   align-items: center;
@@ -574,19 +574,19 @@ body {
   display: flex;
   gap: 12px;
   justify-content: center;
-  padding: 16px 0;
+  padding: 8px 0 12px;
   flex-shrink: 0;
 }
 
 .action-btn {
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 999px;
   border: none;
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 15px;
   font-weight: 500;
-  min-height: 44px;
+  min-height: 40px;
   min-width: 44px;
   transition: background-color 0.15s, transform 0.1s;
   display: inline-flex;
@@ -800,6 +800,12 @@ body {
 .share-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .share-btn:disabled:hover { background: var(--blue-sat); }
 .share-btn:focus-visible { outline: 2px solid var(--blue-sat); outline-offset: 2px; }
+
+.share-btn--secondary {
+  background: var(--cream-dark);
+  color: var(--charcoal);
+}
+.share-btn--secondary:hover { background: #e0d6c8; }
 
 /* Share preview */
 .share-preview {
@@ -1406,6 +1412,29 @@ body {
   white-space: nowrap;
 }
 
+/* Compact-height phones — shrink the flower so the puzzle fits without scrolling */
+@media (max-height: 700px) {
+  .flower-grid {
+    width: 248px;
+    height: 248px;
+  }
+
+  .flower-center {
+    width: 74px;
+    height: 74px;
+  }
+
+  .flower-petal {
+    --petal-dist: 78px;
+    width: 60px;
+    height: 74px;
+  }
+
+  .hex-letter {
+    font-size: 20px;
+  }
+}
+
 /* Desktop */
 @media (min-width: 640px) {
   body {
@@ -1551,26 +1580,6 @@ body {
 
 .create-preview[hidden] { display: none; }
 
-/* Back to daily button */
-.back-to-daily-btn {
-  background: none;
-  border: none;
-  color: var(--blue-sat);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 999px;
-  transition: background 0.15s;
-}
-
-.back-to-daily-btn:hover {
-  background: var(--blue-light);
-}
-
-.back-to-daily-btn[hidden] { display: none; }
-
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1579,3 +1588,386 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================
+ * Screens (home / game / yesterday)
+ * ============================================================ */
+.screen {
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.screen[hidden] {
+  display: none !important;
+}
+
+/* ============================================================
+ * Home screen
+ * ============================================================ */
+.home-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+  position: relative;
+  z-index: 1;
+}
+
+.home-logo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 18px;
+}
+
+.home-logo-text {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--charcoal);
+  line-height: 1;
+}
+
+.home-logo-flower {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.home-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.home-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: white;
+  border: 1px solid var(--cream-dark);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  color: var(--charcoal);
+  box-shadow: 0 2px 8px var(--shadow);
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(44, 40, 37, 0.14);
+  transform: translateY(-2px);
+}
+
+.home-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.home-card:focus-visible {
+  outline: 2px solid var(--blue-sat);
+  outline-offset: 2px;
+}
+
+.home-card-icon {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+
+.home-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.home-card-label {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--charcoal);
+  line-height: 1.2;
+}
+
+.home-card-blurb {
+  font-size: 12px;
+  color: var(--warm-grey);
+  line-height: 1.3;
+}
+
+@media (min-width: 640px) {
+  .home-container {
+    padding-top: 32px;
+  }
+
+  .home-logo-text {
+    font-size: 36px;
+  }
+
+  .home-logo-flower {
+    font-size: 28px;
+  }
+
+  .home-card {
+    padding: 14px 16px;
+  }
+
+  .home-card-icon {
+    font-size: 28px;
+    width: 40px;
+  }
+
+  .home-card-label {
+    font-size: 16px;
+  }
+
+  .home-card-blurb {
+    font-size: 13px;
+  }
+}
+
+/* ============================================================
+ * Yesterday's Solution screen
+ * ============================================================ */
+.yesterday-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.yesterday-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.yesterday-date {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-grey);
+}
+
+.yesterday-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin: 8px 0 16px;
+  text-align: center;
+}
+
+/* Letter row (7 tiles populated by JS) */
+.letter-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 20px;
+  flex-wrap: wrap;
+}
+
+.letter-tile {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 6px var(--shadow);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--charcoal);
+  text-transform: uppercase;
+}
+
+.letter-tile-centre {
+  background: var(--blue-mid);
+  color: var(--charcoal);
+}
+
+@media (min-width: 640px) {
+  .letter-tile {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+}
+
+.yesterday-section {
+  margin-bottom: 20px;
+}
+
+.yesterday-section h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: 10px;
+}
+
+#yesterday-pangrams {
+  background: #FFF9E6;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--gold);
+}
+
+#yesterday-pangrams ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#yesterday-pangrams li {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #F5E6B8;
+  color: #7A6420;
+  text-transform: lowercase;
+}
+
+#yesterday-words-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  columns: 2;
+  column-gap: 16px;
+}
+
+#yesterday-words-list li {
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 1px 0;
+  text-transform: lowercase;
+  break-inside: avoid;
+}
+
+@media (min-width: 640px) {
+  #yesterday-words-list {
+    columns: 3;
+  }
+}
+
+.word-found {
+  font-weight: 700;
+  color: var(--blue-sat);
+}
+
+.word-missed {
+  color: var(--warm-grey);
+  opacity: 0.7;
+}
+
+.yesterday-summary {
+  text-align: center;
+  font-size: 14px;
+  color: var(--warm-grey);
+  margin-top: 16px;
+  padding: 8px;
+}
+
+/* ============================================================
+ * Timer display (in game header / puzzle-meta)
+ * ============================================================ */
+.timer-display {
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--charcoal);
+  background: var(--cream-dark);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+.timer-display[hidden] {
+  display: none;
+}
+
+.timer-display.timer-warning {
+  background: rgba(232, 133, 122, 0.18);
+  color: var(--coral);
+  animation: timer-pulse 1s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ============================================================
+ * Timed-end modal
+ * ============================================================ */
+.timed-end-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0 20px;
+  padding: 16px;
+  background: var(--cream);
+  border-radius: 12px;
+}
+
+.timed-end-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timed-end-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--warm-grey);
+}
+
+.timed-end-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.timed-end-of {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--warm-grey);
+}
+
+.timed-end-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timed-end-actions .share-btn {
+  margin-top: 0;
+}
+

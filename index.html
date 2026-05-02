@@ -19,6 +19,49 @@
     <svg class="petal petal-5" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><ellipse cx="60" cy="90" rx="35" ry="85" fill="currentColor"/></svg>
   </div>
 
+  <!-- Home screen -->
+  <div id="screen-home" class="screen">
+    <div class="home-container">
+      <div class="home-logo">
+        <span class="home-logo-text">bloombert</span>
+        <span class="home-logo-flower">🌸</span>
+      </div>
+      <div class="home-cards">
+        <button id="home-btn-daily" class="home-card" type="button">
+          <span class="home-card-icon" aria-hidden="true">🌼</span>
+          <span class="home-card-text">
+            <span class="home-card-label">Today's Puzzle</span>
+            <span class="home-card-blurb">The daily Bloombert.</span>
+          </span>
+        </button>
+        <button id="home-btn-timed" class="home-card" type="button">
+          <span class="home-card-icon" aria-hidden="true">⏱️</span>
+          <span class="home-card-text">
+            <span class="home-card-label">Timed Puzzle</span>
+            <span class="home-card-blurb">3 minutes. Find as many as you can.</span>
+          </span>
+        </button>
+        <button id="home-btn-create" class="home-card" type="button">
+          <span class="home-card-icon" aria-hidden="true">✏️</span>
+          <span class="home-card-text">
+            <span class="home-card-label">Create Your Own</span>
+            <span class="home-card-blurb">Build a custom 7-letter puzzle.</span>
+          </span>
+        </button>
+        <button id="home-btn-yesterday" class="home-card" type="button">
+          <span class="home-card-icon" aria-hidden="true">🌿</span>
+          <span class="home-card-text">
+            <span class="home-card-label">Yesterday's Solution</span>
+            <span class="home-card-blurb">See yesterday's words.</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game screen (wraps the original game container) -->
+  <div id="screen-game" class="screen" hidden>
+
   <!-- Main game container -->
   <div class="game-container">
 
@@ -26,8 +69,8 @@
     <header class="game-header">
       <div class="logo">bloombert <span class="logo-flower">🌸</span> <span id="streak-display" class="streak"></span></div>
       <div class="header-meta">
-        <button id="btn-create" class="icon-btn" aria-label="Create a puzzle">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <button id="btn-home" class="icon-btn" aria-label="Home">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/></svg>
         </button>
         <button id="btn-share-header" class="icon-btn" aria-label="Share results">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
@@ -54,7 +97,7 @@
       <div class="puzzle-meta">
         <span id="difficulty-badge" class="difficulty-badge"></span>
         <span id="date-display" class="date-display"></span>
-        <button id="btn-back-to-daily" class="back-to-daily-btn" hidden>Back to daily</button>
+        <span id="timer-display" class="timer-display" hidden></span>
       </div>
     </section>
 
@@ -116,6 +159,31 @@
 
 
   </div><!-- /.game-container -->
+
+  </div><!-- /#screen-game -->
+
+  <!-- Yesterday's Solution screen -->
+  <div id="screen-yesterday" class="screen" hidden>
+    <div class="yesterday-container">
+      <header class="yesterday-header">
+        <span id="yesterday-date" class="yesterday-date"></span>
+        <button id="yesterday-btn-home" class="icon-btn" aria-label="Home">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/></svg>
+        </button>
+      </header>
+      <h1 class="yesterday-title">Yesterday's Solution</h1>
+      <div id="yesterday-letter-row" class="letter-row"></div>
+      <section id="yesterday-pangrams" class="yesterday-section">
+        <h2>Pangrams 🌸</h2>
+        <ul></ul>
+      </section>
+      <section id="yesterday-words" class="yesterday-section">
+        <h2>Common Words</h2>
+        <ul id="yesterday-words-list"></ul>
+      </section>
+      <p id="yesterday-summary" class="yesterday-summary"></p>
+    </div>
+  </div>
 
   <!-- Modals -->
   <div id="modal-how-to-play" class="modal" role="dialog" aria-modal="true" aria-labelledby="htp-title" hidden>
@@ -368,6 +436,40 @@
         <span id="create-word-count"></span>
       </div>
       <button id="btn-create-go" class="share-btn" disabled>Create Puzzle</button>
+    </div>
+  </div>
+
+  <!-- Timed mode end modal -->
+  <div id="modal-timed-end" class="modal" role="dialog" aria-modal="true" aria-labelledby="timed-end-title" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-timed-end" aria-label="Close">✕</button>
+      <h2 id="timed-end-title">Time's up! 🌸</h2>
+      <div class="timed-end-summary">
+        <div class="timed-end-row">
+          <span class="timed-end-label">Score</span>
+          <span id="timed-end-score" class="timed-end-value">0</span>
+        </div>
+        <div class="timed-end-row">
+          <span class="timed-end-label">Words found</span>
+          <span class="timed-end-value">
+            <span id="timed-end-found">0</span>
+            <span class="timed-end-of"> of </span>
+            <span id="timed-end-total">0</span>
+          </span>
+        </div>
+        <div class="timed-end-row">
+          <span class="timed-end-label">Rank</span>
+          <span id="timed-end-rank" class="timed-end-value"></span>
+        </div>
+      </div>
+      <div class="timed-end-actions">
+        <button id="timed-end-share" class="share-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+          Share Results
+        </button>
+        <button id="timed-end-home" class="share-btn share-btn--secondary">Back to Home</button>
+      </div>
     </div>
   </div>
 

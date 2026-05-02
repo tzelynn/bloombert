@@ -6,6 +6,17 @@ Built by Claude.
 
 **[Play Bloombert](https://tzelynn.github.io/bloombert)**
 
+## Game modes
+
+From the home screen you can pick:
+
+- **Today's Puzzle** 🌼 — the daily puzzle. Counts toward your streak and stats.
+- **Timed Puzzle** ⏱️ — a 3-minute time-attack puzzle (different letter set from the daily). Loose quality gates so it generates fast; doesn't affect your streak.
+- **Create Your Own** ✏️ — pick 7 letters and a centre, get a shareable `?p=CODE` link.
+- **Yesterday's Solution** 🌿 — see yesterday's letter row, pangrams, and the full common-words list with your finds vs misses.
+
+Each mode has its own URL (`/`, `/?mode=daily`, `/?mode=timed`, `/?mode=yesterday`, `/?p=CODE`) so back/forward navigation Just Works.
+
 ## Getting Started
 
 ```bash

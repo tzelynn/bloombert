@@ -71,7 +71,7 @@ function getRank(currentScore, thresholds) {
   };
 }
 
-function formatShareText(date, rank, foundCount, totalCount, score, bloomCount, bonusCount, puzzleCode) {
+function formatShareText(date, rank, foundCount, totalCount, score, bloomCount, bonusCount, puzzleCode, mode) {
   var headerLine;
   var url;
 
@@ -82,8 +82,13 @@ function formatShareText(date, rank, foundCount, totalCount, score, bloomCount, 
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var parts = date.split('-');
     var prettyDate = months[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10) + ', ' + parts[0];
-    headerLine = '🌷 Bloombert · ' + prettyDate;
-    url = 'https://tzelynn.github.io/bloombert';
+    if (mode === 'timed') {
+      headerLine = '⏱️ Timed Bloombert · ' + prettyDate;
+      url = 'https://tzelynn.github.io/bloombert';
+    } else {
+      headerLine = '🌷 Daily Bloombert · ' + prettyDate;
+      url = 'https://tzelynn.github.io/bloombert';
+    }
   }
 
   // Progress bar: 8 squares based on rank index
