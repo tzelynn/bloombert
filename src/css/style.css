@@ -1851,6 +1851,21 @@ body {
   text-transform: lowercase;
 }
 
+#yesterday-pangrams li.word-found {
+  background: #F5E6B8;
+  color: #7A6420;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+#yesterday-pangrams li.word-missed {
+  background: transparent;
+  color: var(--warm-grey);
+  font-weight: 500;
+  border: 1px dashed rgba(122, 100, 32, 0.35);
+  opacity: 0.75;
+}
+
 #yesterday-words-list {
   list-style: none;
   padding: 0;
