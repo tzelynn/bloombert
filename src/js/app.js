@@ -742,13 +742,6 @@
 
   function openTimedEndModal() {
     if (!modalTimedEnd) return;
-    // If any other modal is currently open (e.g. user opened stats while the
-    // timer was still ticking), close it first so we don't end up with two
-    // modals stacked at z-index:200 and a doubled modalHistoryCount.
-    var openModals = document.querySelectorAll('.modal:not([hidden])');
-    for (var i = 0; i < openModals.length; i++) {
-      if (openModals[i] !== modalTimedEnd) closeModal(openModals[i]);
-    }
     if (timedEndScore) timedEndScore.textContent = currentScore;
     var commonFound = foundWords.size - bonusCount;
     if (timedEndFound) timedEndFound.textContent = commonFound;
@@ -757,7 +750,21 @@
       var r = getRank(currentScore, thresholds);
       timedEndRank.textContent = r.emoji + ' ' + r.name;
     }
-    openModal(modalTimedEnd);
+    // If another modal is open (e.g. modal-bloom-celebration from a submit
+    // that landed on the expiry boundary, or stats opened mid-timer), reuse
+    // its history entry via swapModal. closeModal+openModal would race an
+    // async history.back() against a sync pushState and the new modal can
+    // end up not visible.
+    var openOther = null;
+    var openModals = document.querySelectorAll('.modal:not([hidden])');
+    for (var i = 0; i < openModals.length; i++) {
+      if (openModals[i] !== modalTimedEnd) { openOther = openModals[i]; break; }
+    }
+    if (openOther) {
+      swapModal(openOther, modalTimedEnd);
+    } else {
+      openModal(modalTimedEnd);
+    }
   }
 
   // --- Date formatting ---
@@ -886,6 +893,15 @@
   // --- Submit ---
   function submitGuess() {
     if (mode === 'timed' && (timedCompleted || countdownActive)) return;
+    // Boundary case: Enter pressed in the gap between timer crossing 0 and
+    // the next tick firing. Without this, the submit processes the word
+    // (possibly opening modal-bloom-celebration), then expireTimer fires and
+    // has to race a modal swap. Catch it here and run expireTimer cleanly.
+    if (mode === 'timed' && timerStartTimestamp != null &&
+        Date.now() >= timerStartTimestamp + TIMED_DURATION_MS) {
+      expireTimer();
+      return;
+    }
     const word = currentInput.toLowerCase();
     if (word.length === 0) return;
 
