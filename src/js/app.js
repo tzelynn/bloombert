@@ -99,6 +99,9 @@
   const homeBtnTimed = $('home-btn-timed');
   const homeBtnCreate = $('home-btn-create');
   const homeBtnYesterday = $('home-btn-yesterday');
+  const homeDateText = $('home-date-text');
+  const homeStreak = $('home-streak');
+  const homeStreakText = $('home-streak-text');
   const yesterdayBtnHome = $('yesterday-btn-home');
   const yesterdayDate = $('yesterday-date');
   const yesterdayLetterRow = $('yesterday-letter-row');
@@ -217,6 +220,28 @@
     if (!homeHandlersAttached) {
       attachHomeHandlers();
       homeHandlersAttached = true;
+    }
+    refreshHomeContent();
+  }
+
+  function refreshHomeContent() {
+    if (homeDateText) {
+      var now = new Date();
+      var WK = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      homeDateText.textContent = WK[now.getDay()] + ' · ' + MO[now.getMonth()] + ' ' + now.getDate();
+    }
+    if (homeStreak && homeStreakText) {
+      try {
+        var s = loadStats();
+        var n = (s && s.currentStreak) ? s.currentStreak : 0;
+        if (n >= 2) {
+          homeStreakText.textContent = n + '-day streak';
+          homeStreak.hidden = false;
+        } else {
+          homeStreak.hidden = true;
+        }
+      } catch (e) { homeStreak.hidden = true; }
     }
   }
 
