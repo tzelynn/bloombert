@@ -99,6 +99,9 @@
   const homeBtnTimed = $('home-btn-timed');
   const homeBtnCreate = $('home-btn-create');
   const homeBtnYesterday = $('home-btn-yesterday');
+  const homeDateText = $('home-date-text');
+  const homeStreak = $('home-streak');
+  const homeStreakText = $('home-streak-text');
   const yesterdayBtnHome = $('yesterday-btn-home');
   const yesterdayDate = $('yesterday-date');
   const yesterdayLetterRow = $('yesterday-letter-row');
@@ -218,6 +221,28 @@
       attachHomeHandlers();
       homeHandlersAttached = true;
     }
+    refreshHomeContent();
+  }
+
+  function refreshHomeContent() {
+    if (homeDateText) {
+      var now = new Date();
+      var WK = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      homeDateText.textContent = WK[now.getDay()] + ' · ' + MO[now.getMonth()] + ' ' + now.getDate();
+    }
+    if (homeStreak && homeStreakText) {
+      try {
+        var s = loadStats();
+        var n = (s && s.currentStreak) ? s.currentStreak : 0;
+        if (n >= 2) {
+          homeStreakText.textContent = n + '-day streak';
+          homeStreak.hidden = false;
+        } else {
+          homeStreak.hidden = true;
+        }
+      } catch (e) { homeStreak.hidden = true; }
+    }
   }
 
   function attachHomeHandlers() {
@@ -261,6 +286,7 @@
     var seed = getTodaysSeed();
     puzzle = generatePuzzle(seed);
     thresholds = computeRankThresholds(puzzle.commonScore);
+    try { localStorage.setItem('bloombert-commonscore-' + dateKey, String(puzzle.commonScore)); } catch (e) {}
 
     loadDailyState();
     stats = loadStats();
@@ -344,6 +370,7 @@
 
     dateKey = getTodaysDateKey();
     thresholds = computeRankThresholds(puzzle.commonScore);
+    try { localStorage.setItem('bloombert-timed-commonscore-' + dateKey, String(puzzle.commonScore)); } catch (e) {}
 
     var saved = loadTimedState(dateKey);
     if (saved) {
@@ -374,6 +401,7 @@
     }
 
     stats = loadStats();
+    runOneTimeTimedStatsFix();
     difficultyBadge.textContent = puzzle.difficulty;
     dateDisplay.textContent = '';
     streakDisplay.textContent = '';
@@ -496,6 +524,7 @@
           yesterdayPangrams.hidden = false;
           for (var pi = 0; pi < pangrams.length; pi++) {
             var li = document.createElement('li');
+            li.className = userFound.has(pangrams[pi]) ? 'word-found' : 'word-missed';
             li.textContent = pangrams[pi].toUpperCase();
             pangramsUl.appendChild(li);
           }
@@ -582,6 +611,31 @@
     stats.totalWords = actualWords;
     stats.playedCountFixed = true;
     stats.wordCountFixed = true;
+    saveStats(stats);
+  }
+
+  // One-time backfill so users with existing timed-state entries (played
+  // before this stats tracking was added) see correct gamesPlayed/maxWords.
+  // Streak isn't backfilled — it starts fresh with the next play.
+  function runOneTimeTimedStatsFix() {
+    if (stats.timedStatsFixed) return;
+    var played = 0;
+    var maxWords = 0;
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('bloombert-timed-state-') === 0) {
+        try {
+          var s = JSON.parse(localStorage.getItem(k));
+          if (s && Array.isArray(s.foundWords) && s.foundWords.length > 0) {
+            played++;
+            if (s.foundWords.length > maxWords) maxWords = s.foundWords.length;
+          }
+        } catch (e) {}
+      }
+    }
+    stats.timedGamesPlayed = Math.max(stats.timedGamesPlayed || 0, played);
+    stats.timedMaxWords = Math.max(stats.timedMaxWords || 0, maxWords);
+    stats.timedStatsFixed = true;
     saveStats(stats);
   }
 
@@ -713,13 +767,6 @@
 
   function openTimedEndModal() {
     if (!modalTimedEnd) return;
-    // If any other modal is currently open (e.g. user opened stats while the
-    // timer was still ticking), close it first so we don't end up with two
-    // modals stacked at z-index:200 and a doubled modalHistoryCount.
-    var openModals = document.querySelectorAll('.modal:not([hidden])');
-    for (var i = 0; i < openModals.length; i++) {
-      if (openModals[i] !== modalTimedEnd) closeModal(openModals[i]);
-    }
     if (timedEndScore) timedEndScore.textContent = currentScore;
     var commonFound = foundWords.size - bonusCount;
     if (timedEndFound) timedEndFound.textContent = commonFound;
@@ -728,7 +775,21 @@
       var r = getRank(currentScore, thresholds);
       timedEndRank.textContent = r.emoji + ' ' + r.name;
     }
-    openModal(modalTimedEnd);
+    // If another modal is open (e.g. modal-bloom-celebration from a submit
+    // that landed on the expiry boundary, or stats opened mid-timer), reuse
+    // its history entry via swapModal. closeModal+openModal would race an
+    // async history.back() against a sync pushState and the new modal can
+    // end up not visible.
+    var openOther = null;
+    var openModals = document.querySelectorAll('.modal:not([hidden])');
+    for (var i = 0; i < openModals.length; i++) {
+      if (openModals[i] !== modalTimedEnd) { openOther = openModals[i]; break; }
+    }
+    if (openOther) {
+      swapModal(openOther, modalTimedEnd);
+    } else {
+      openModal(modalTimedEnd);
+    }
   }
 
   // --- Date formatting ---
@@ -857,6 +918,15 @@
   // --- Submit ---
   function submitGuess() {
     if (mode === 'timed' && (timedCompleted || countdownActive)) return;
+    // Boundary case: Enter pressed in the gap between timer crossing 0 and
+    // the next tick firing. Without this, the submit processes the word
+    // (possibly opening modal-bloom-celebration), then expireTimer fires and
+    // has to race a modal swap. Catch it here and run expireTimer cleanly.
+    if (mode === 'timed' && timerStartTimestamp != null &&
+        Date.now() >= timerStartTimestamp + TIMED_DURATION_MS) {
+      expireTimer();
+      return;
+    }
     const word = currentInput.toLowerCase();
     if (word.length === 0) return;
 
@@ -897,6 +967,15 @@
         stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
       }
       stats.totalWords = (stats.totalWords || 0) + 1;
+      saveStats(stats);
+    } else if (mode === 'timed') {
+      if (foundWords.size === 1) {
+        stats = checkAndUpdateTimedStreak(stats, dateKey);
+        stats.timedGamesPlayed = (stats.timedGamesPlayed || 0) + 1;
+      }
+      if (foundWords.size > (stats.timedMaxWords || 0)) {
+        stats.timedMaxWords = foundWords.size;
+      }
       saveStats(stats);
     }
 
@@ -1115,29 +1194,65 @@
   }
 
   function updateStatsModal() {
-    $('stat-played').textContent = stats.gamesPlayed || 0;
-    $('stat-words').textContent = stats.totalWords || 0;
-    $('stat-streak').textContent = stats.currentStreak || 0;
-    $('stat-best-streak').textContent = Math.max(stats.bestStreak || 0, stats.currentStreak || 0);
+    if (mode === 'timed') {
+      $('stat-played').textContent = stats.timedGamesPlayed || 0;
+      $('stat-words').textContent = stats.timedMaxWords || 0;
+      $('stat-streak').textContent = stats.timedCurrentStreak || 0;
+      $('stat-best-streak').textContent = Math.max(stats.timedBestStreak || 0, stats.timedCurrentStreak || 0);
+    } else {
+      $('stat-played').textContent = stats.gamesPlayed || 0;
+      $('stat-words').textContent = stats.totalWords || 0;
+      $('stat-streak').textContent = stats.currentStreak || 0;
+      $('stat-best-streak').textContent = Math.max(stats.bestStreak || 0, stats.currentStreak || 0);
+    }
+    var statsTitle = document.getElementById('stats-title');
+    if (statsTitle) statsTitle.textContent = mode === 'timed' ? 'Your Timed Garden ⏱️' : 'Your Garden 🌷';
+    var wordsLabel = document.querySelector('#stat-words + .stat-label');
+    if (wordsLabel) wordsLabel.textContent = mode === 'timed' ? 'Best Words' : 'Words Found';
     renderGardenGraph();
+  }
+
+  // Returns the puzzle.commonScore for a given daily or timed date, caching
+  // the result so subsequent stats opens are fast. Falls back to regenerating
+  // the puzzle if no cache entry exists yet.
+  function getCommonScoreFor(dateKey, modeKind) {
+    var prefix = modeKind === 'timed' ? 'bloombert-timed-commonscore-' : 'bloombert-commonscore-';
+    try {
+      var cached = localStorage.getItem(prefix + dateKey);
+      if (cached) {
+        var n = parseInt(cached, 10);
+        if (!isNaN(n) && n > 0) return n;
+      }
+    } catch (e) {}
+    var seedNum = parseInt(dateKey.replace(/-/g, ''), 10);
+    if (isNaN(seedNum)) return null;
+    if (modeKind === 'timed') seedNum += 100000000;
+    try {
+      var p = modeKind === 'timed' ? generateTimedPuzzle(seedNum) : generatePuzzle(seedNum);
+      try { localStorage.setItem(prefix + dateKey, String(p.commonScore)); } catch (e) {}
+      return p.commonScore;
+    } catch (e) {
+      return null;
+    }
   }
 
   function renderGardenGraph() {
     var container = $('garden-graph');
     if (!container) return;
-    // In non-daily modes, dateKey is either today's date (timed) or
-    // 'custom-XXXXX' (custom). Either way, the in-memory foundWords reflects
-    // timed/custom progress, not daily — so pass undefined to let the helper
-    // read today's daily state from localStorage like every other day. Use
-    // getTodaysDateKey() so the "today" highlight still lines up.
     var todayKey = getTodaysDateKey();
-    var data = (mode === 'daily')
-      ? getDailyWordCounts(dateKey, 7, foundWords.size)
-      : getDailyWordCounts(todayKey, 7, undefined);
+    var graphMode = mode === 'timed' ? 'timed' : 'daily';
+    var data;
+    if (mode === 'daily') {
+      data = getDailyWordCounts(dateKey, 7, foundWords.size, currentScore);
+    } else if (mode === 'timed') {
+      data = getTimedWordCounts(todayKey, 7, foundWords.size, currentScore);
+    } else {
+      // Custom mode: in-memory state isn't a daily play — read all 7 from storage.
+      data = getDailyWordCounts(todayKey, 7, undefined, undefined);
+    }
     var maxWords = Math.max.apply(null, data.map(function(d) { return d.words; }));
     if (maxWords === 0) maxWords = 1;
     var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    var flowers = ['🌱','🌿','🌼','🌸','🌺','🌻','💐'];
 
     container.innerHTML = '';
     for (var i = 0; i < data.length; i++) {
@@ -1147,8 +1262,17 @@
       var dayDate = new Date(entry.date + 'T00:00:00');
       var dayLabel = dayNames[dayDate.getDay()];
 
-      var flowerIdx = entry.words === 0 ? 0 : Math.min(Math.floor((entry.words / maxWords) * (flowers.length - 1)) + 1, flowers.length - 1);
-      var flower = flowers[flowerIdx];
+      // Emoji = rank achieved on that day, computed from saved score against
+      // that day's puzzle commonScore. Days with no progress show 🌱.
+      var flower = '🌱';
+      if (entry.score > 0) {
+        var dayCommonScore = getCommonScoreFor(entry.date, graphMode);
+        if (dayCommonScore) {
+          var dayThresholds = computeRankThresholds(dayCommonScore);
+          var dayRank = getRank(entry.score, dayThresholds);
+          flower = dayRank.emoji;
+        }
+      }
 
       var col = document.createElement('div');
       col.className = 'garden-col' + (isToday ? ' garden-col--today' : '');

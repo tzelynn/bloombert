@@ -7,60 +7,105 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
   <link rel="stylesheet" href="src/css/style.css">
 </head>
 <body>
-  <!-- Background decoration layer -->
-  <div class="bg-petals" aria-hidden="true">
-    <svg class="petal petal-1" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><ellipse cx="60" cy="90" rx="40" ry="80" fill="currentColor"/></svg>
-    <svg class="petal petal-2" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg"><path d="M50 0 C80 40, 90 120, 50 160 C10 120, 20 40, 50 0Z" fill="currentColor"/></svg>
-    <svg class="petal petal-3" viewBox="0 0 140 200" xmlns="http://www.w3.org/2000/svg"><ellipse cx="70" cy="100" rx="50" ry="90" fill="currentColor"/></svg>
-    <svg class="petal petal-4" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg"><path d="M50 0 C85 30, 100 130, 50 160 C0 130, 15 30, 50 0Z" fill="currentColor"/></svg>
-    <svg class="petal petal-5" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><ellipse cx="60" cy="90" rx="35" ry="85" fill="currentColor"/></svg>
-  </div>
-
   <!-- Home screen -->
   <div id="screen-home" class="screen">
-    <div class="home-container">
-      <div class="home-logo">
-        <span class="home-logo-text">bloombert</span>
-        <span class="home-logo-flower">🌸</span>
-      </div>
-      <div class="home-cards">
-        <button id="home-btn-daily" class="home-card" type="button">
-          <span class="home-card-icon" aria-hidden="true">🌼</span>
-          <span class="home-card-text">
-            <span class="home-card-label">Today's Puzzle</span>
-            <span class="home-card-blurb">The daily Bloombert.</span>
-          </span>
-        </button>
-        <button id="home-btn-timed" class="home-card" type="button">
-          <span class="home-card-icon" aria-hidden="true">⏱️</span>
-          <span class="home-card-text">
-            <span class="home-card-label">Timed Puzzle</span>
-            <span class="home-card-blurb">3 minutes. Find as many as you can.</span>
-          </span>
-        </button>
-        <button id="home-btn-create" class="home-card" type="button">
-          <span class="home-card-icon" aria-hidden="true">✏️</span>
-          <span class="home-card-text">
-            <span class="home-card-label">Create Your Own</span>
-            <span class="home-card-blurb">Build a custom 7-letter puzzle.</span>
-          </span>
-        </button>
-        <button id="home-btn-yesterday" class="home-card" type="button">
-          <span class="home-card-icon" aria-hidden="true">🌿</span>
-          <span class="home-card-text">
-            <span class="home-card-label">Yesterday's Solution</span>
-            <span class="home-card-blurb">See yesterday's words.</span>
-          </span>
-        </button>
-      </div>
+    <div class="bg-blooms bg-blooms--home" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
     </div>
+
+    <main class="home-frame">
+      <!-- top utility row -->
+      <div class="home-topbar">
+        <div class="home-date">
+          <span class="home-dot"></span>
+          <span id="home-date-text">—</span>
+        </div>
+        <div id="home-streak" class="home-streak" hidden>
+          <span class="home-seed"></span>
+          <span id="home-streak-text">0-day streak</span>
+        </div>
+      </div>
+
+      <!-- hero -->
+      <header class="home-hero">
+        <div class="home-wordmark">
+          bloombert<span class="home-bloom-mark" aria-hidden="true">
+            <span class="home-petal"></span><span class="home-petal"></span><span class="home-petal"></span>
+            <span class="home-petal"></span><span class="home-petal"></span>
+            <span class="home-bloom-core"></span>
+          </span>
+        </div>
+      </header>
+
+      <div class="home-vine" aria-hidden="true">
+        <span class="home-vine-stem"></span>
+        <span class="home-vine-leaf"></span>
+        <span class="home-vine-stem"></span>
+      </div>
+
+      <!-- menu -->
+      <div class="home-menu">
+        <button id="home-btn-daily" class="home-menu-card" type="button">
+          <span class="home-menu-icon home-menu-icon--daily">
+            <i class="ph-duotone ph-flower-tulip" aria-hidden="true"></i>
+          </span>
+          <span class="home-menu-copy">
+            <span class="home-menu-title">Today's Puzzle</span>
+            <span class="home-menu-sub">The daily Bloombert.</span>
+          </span>
+          <span class="home-menu-chev" aria-hidden="true"></span>
+        </button>
+
+        <button id="home-btn-timed" class="home-menu-card" type="button">
+          <span class="home-menu-icon home-menu-icon--timed">
+            <i class="ph-duotone ph-hourglass-medium" aria-hidden="true"></i>
+          </span>
+          <span class="home-menu-copy">
+            <span class="home-menu-title">Timed Puzzle</span>
+            <span class="home-menu-sub">3 minutes. Find as many as you can.</span>
+          </span>
+          <span class="home-menu-chev" aria-hidden="true"></span>
+        </button>
+
+        <button id="home-btn-create" class="home-menu-card" type="button">
+          <span class="home-menu-icon home-menu-icon--create">
+            <i class="ph-duotone ph-pencil-simple-line" aria-hidden="true"></i>
+          </span>
+          <span class="home-menu-copy">
+            <span class="home-menu-title">Create Your Own</span>
+            <span class="home-menu-sub">Build a custom 7-letter puzzle.</span>
+          </span>
+          <span class="home-menu-chev" aria-hidden="true"></span>
+        </button>
+
+        <button id="home-btn-yesterday" class="home-menu-card" type="button">
+          <span class="home-menu-icon home-menu-icon--yesterday">
+            <i class="ph-duotone ph-plant" aria-hidden="true"></i>
+          </span>
+          <span class="home-menu-copy">
+            <span class="home-menu-title">Yesterday's Solution</span>
+            <span class="home-menu-sub">See yesterday's words.</span>
+          </span>
+          <span class="home-menu-chev" aria-hidden="true"></span>
+        </button>
+      </div>
+    </main>
   </div>
 
   <!-- Game screen (wraps the original game container) -->
   <div id="screen-game" class="screen" hidden>
+
+  <div class="bg-blooms bg-blooms--game" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
 
   <!-- Main game container -->
   <div class="game-container">
@@ -168,6 +213,11 @@
 
   <!-- Yesterday's Solution screen -->
   <div id="screen-yesterday" class="screen" hidden>
+    <div class="bg-blooms bg-blooms--yesterday" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
     <div class="yesterday-container">
       <header class="yesterday-header">
         <span id="yesterday-date" class="yesterday-date"></span>

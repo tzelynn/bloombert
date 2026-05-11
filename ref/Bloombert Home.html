@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bloombert — Home</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&family=Manrope:wght@300..800&family=Caprasimo&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+
+<style>
+  :root{
+    /* Bloom palette (default) */
+    --bg: #F6EDDC;
+    --bg-tint: #F1E5CF;
+    --paper: #FFFFFF;
+    --ink: #2A2520;
+    --ink-soft: #6F6358;
+    --ink-faint: #A89C8E;
+    --line: #E9DEC8;
+
+    --bloom: #D88695;       /* dusty rose */
+    --bloom-deep: #B65F70;
+    --leaf: #94A989;        /* sage */
+    --leaf-deep: #6E866B;
+    --honey: #D9A05B;       /* warm honey */
+    --sky: #B7C8D6;         /* dusty sky */
+    --lilac: #B0A6C7;
+
+    --r-card: 22px;
+    --r-pill: 999px;
+    --shadow-card: 0 1px 0 rgba(43,37,32,0.04), 0 8px 24px -16px rgba(43,37,32,0.18);
+  }
+
+  /* alt palettes */
+  body[data-palette="meadow"]{
+    --bg:#EFEBDD; --bg-tint:#E6E1CE; --line:#DBD3BC;
+    --bloom:#7B9E84; --bloom-deep:#54725D;
+  }
+  body[data-palette="dusk"]{
+    --bg:#EFEAE6; --bg-tint:#E5DEDA; --line:#DDD3CB;
+    --bloom:#A98AB5; --bloom-deep:#7C5F8A;
+    --leaf:#8FA59C; --honey:#C99066;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Manrope", system-ui, sans-serif;
+    font-feature-settings:"ss01","ss02";
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 28px 18px 48px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* soft organic background blooms */
+  .bg-blooms{
+    position: fixed; inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .bg-blooms .blob{
+    position:absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.55;
+  }
+  .blob.b1{ width:340px; height:340px; left:-90px; top:-60px; background: #F2D6CC; }
+  .blob.b2{ width:280px; height:260px; right:-80px; top:38%; background: #DCE6D5; opacity:0.5; }
+  .blob.b3{ width:220px; height:220px; left:30%; bottom:-60px; background: #EADFC9; opacity:0.7; }
+
+  .frame{
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  /* Header */
+  .topbar{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    padding: 4px 6px 0;
+    color: var(--ink-soft);
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .topbar .date{ display:flex; gap:8px; align-items:center; }
+  .topbar .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--bloom);
+    display:inline-block;
+  }
+  .topbar .streak{
+    display:flex; align-items:center; gap:7px;
+    color: var(--leaf-deep);
+  }
+  .topbar .streak .seed{
+    width:10px; height:10px; border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    background: var(--leaf);
+  }
+
+  .hero{
+    text-align:center;
+    padding: 18px 0 6px;
+    position: relative;
+  }
+  .hero .wordmark{
+    font-family: "Newsreader", "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(56px, 16vw, 76px);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    display:inline-block;
+    position: relative;
+    font-variation-settings: "opsz" 60;
+  }
+  /* alt wordmark style */
+  body[data-wordmark="round"] .hero .wordmark{
+    font-family: "Caprasimo", "Newsreader", serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: clamp(48px, 14vw, 64px);
+    letter-spacing: -0.015em;
+  }
+  body[data-wordmark="serif-bold"] .hero .wordmark{
+    font-style: normal;
+    font-weight: 700;
+    font-variation-settings: "opsz" 16;
+  }
+
+  .hero .tagline{
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.06em;
+  }
+  .hero .tagline em{
+    font-family: "Newsreader", serif;
+    font-style: italic;
+    color: var(--bloom-deep);
+    font-weight: 400;
+    font-size: 14px;
+  }
+
+  /* the bloom mark beside the wordmark */
+  .bloom-mark{
+    display: inline-block;
+    width: 38px; height: 38px;
+    vertical-align: middle;
+    margin-left: 6px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .bloom-mark .petal{
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--bloom);
+    left: 50%; top: 50%;
+  }
+  .bloom-mark .petal:nth-child(1){ transform: translate(-50%, -50%) rotate(0deg)   translateY(-11px); }
+  .bloom-mark .petal:nth-child(2){ transform: translate(-50%, -50%) rotate(72deg)  translateY(-11px); }
+  .bloom-mark .petal:nth-child(3){ transform: translate(-50%, -50%) rotate(144deg) translateY(-11px); }
+  .bloom-mark .petal:nth-child(4){ transform: translate(-50%, -50%) rotate(216deg) translateY(-11px); }
+  .bloom-mark .petal:nth-child(5){ transform: translate(-50%, -50%) rotate(288deg) translateY(-11px); }
+  .bloom-mark .core{
+    position:absolute; left:50%; top:50%;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--honey);
+    transform: translate(-50%, -50%);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.08);
+  }
+
+  /* hairline bloom divider */
+  .vine{
+    height: 22px;
+    margin: 4px auto 6px;
+    display:flex; align-items:center; justify-content:center;
+    gap: 6px;
+    color: var(--ink-faint);
+  }
+  .vine .stem{
+    width: 64px; height: 1px; background: var(--line);
+  }
+  .vine .leaf{
+    width: 8px; height: 12px;
+    background: var(--leaf);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    opacity: .7;
+  }
+
+  /* Today card (featured) */
+  .featured{
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: var(--paper);
+    border-radius: var(--r-card);
+    padding: 18px 18px 16px;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .featured:hover{
+    transform: translateY(-1px);
+    border-color: #DCCEB3;
+    box-shadow: 0 12px 28px -16px rgba(43,37,32,0.22);
+  }
+  .featured .feat-meta{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom: 10px;
+    font-size: 11px; letter-spacing: 0.16em;
+    text-transform: uppercase; font-weight:700;
+    color: var(--bloom-deep);
+  }
+  .featured .feat-meta .new-pill{
+    color: var(--leaf-deep);
+    background: #E7EFE0;
+    padding: 4px 9px;
+    border-radius: var(--r-pill);
+    letter-spacing: 0.12em;
+    font-size: 10px;
+    border: 1px solid #D6E0CC;
+  }
+  .featured h2{
+    font-family: "Newsreader", serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 28px;
+    margin: 4px 0 4px;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  .featured p.sub{
+    margin: 0 0 14px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.45;
+  }
+  .featured .row{
+    display:flex; align-items:center; justify-content: space-between;
+    gap: 12px;
+  }
+  .play-btn{
+    appearance: none;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 11px 18px;
+    border-radius: var(--r-pill);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: inline-flex; align-items:center; gap: 8px;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .play-btn:hover{ transform: translateY(-1px); background: #1A1612; }
+  .play-btn .arrow{
+    width: 14px; height: 14px;
+    position: relative;
+  }
+  .play-btn .arrow::before{
+    content:""; position:absolute; left:0; top:50%;
+    width: 12px; height: 1.6px; background: currentColor;
+    transform: translateY(-50%);
+  }
+  .play-btn .arrow::after{
+    content:""; position:absolute; right:0; top:50%;
+    width:6px; height:6px;
+    border-top: 1.6px solid currentColor;
+    border-right: 1.6px solid currentColor;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  /* Hex letter cluster (preview) */
+  .cluster{
+    display: grid;
+    grid-template-columns: repeat(3, 26px);
+    grid-auto-rows: 30px;
+    gap: 3px 4px;
+    transform: translateY(2px);
+  }
+  .cluster .hex{
+    display:flex; align-items:center; justify-content:center;
+    font-family: "Newsreader", serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    background: #F4ECDA;
+    clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
+    text-transform: uppercase;
+  }
+  .cluster .hex.center{
+    background: var(--honey);
+    color: #fff;
+  }
+  .cluster .row-2{ transform: translateX(15px); }
+
+  /* Menu list */
+  .menu{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .menu .label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-faint);
+    font-weight: 700;
+    padding: 0 6px;
+    margin-top: 4px;
+  }
+  .card{
+    background: var(--paper);
+    border-radius: 18px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    box-shadow: 0 1px 0 rgba(43,37,32,0.03);
+  }
+  .card:hover{
+    transform: translateY(-1px);
+    border-color: #DCCEB3;
+    box-shadow: 0 6px 18px -12px rgba(43,37,32,0.18);
+  }
+  .card .icon{
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    flex: 0 0 44px;
+    position: relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card .copy{
+    flex: 1;
+    display:flex; flex-direction:column; gap: 2px;
+  }
+  .card .copy .t{
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+  }
+  .card .copy .s{
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.35;
+  }
+  .card .chev{
+    width: 18px; height: 18px;
+    flex: 0 0 18px;
+    color: var(--ink-faint);
+    position: relative;
+  }
+  .card .chev::after{
+    content:"";
+    position: absolute;
+    width: 7px; height: 7px;
+    border-top: 1.6px solid currentColor;
+    border-right: 1.6px solid currentColor;
+    transform: rotate(45deg);
+    top: 5px; right: 4px;
+  }
+
+  /* Card icon tiles — Phosphor duotone glyphs */
+  .ic-timed{ background: #F4E4DC; }
+  .ic-create{ background: #F1E7D2; }
+  .ic-yesterday{ background: #E4EEDA; }
+
+  .card .icon i{
+    font-size: 24px;
+    line-height: 1;
+    display: block;
+  }
+  .ic-timed i{ color: var(--bloom-deep); }
+  .ic-create i{ color: #9C6F2E; }
+  .ic-yesterday i{ color: var(--leaf-deep); }
+
+  /* Featured icon — stylized flower in card */
+  .feat-flower{
+    width: 56px; height: 56px;
+    position: relative;
+    flex: 0 0 56px;
+  }
+  .feat-flower .pet{
+    position: absolute;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bloom);
+    left: 50%; top: 50%;
+  }
+  .feat-flower .pet{ margin: 0; }
+  .feat-flower .pet:nth-child(1){ transform: translate(-50%, -50%) rotate(0deg)   translateY(-15px); }
+  .feat-flower .pet:nth-child(2){ transform: translate(-50%, -50%) rotate(72deg)  translateY(-15px); }
+  .feat-flower .pet:nth-child(3){ transform: translate(-50%, -50%) rotate(144deg) translateY(-15px); }
+  .feat-flower .pet:nth-child(4){ transform: translate(-50%, -50%) rotate(216deg) translateY(-15px); }
+  .feat-flower .pet:nth-child(5){ transform: translate(-50%, -50%) rotate(288deg) translateY(-15px); }
+  .feat-flower .core{
+    position:absolute; left:50%; top:50%;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--honey);
+    transform: translate(-50%,-50%);
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
+  }
+
+  /* footer */
+  .foot{
+    margin-top: 6px;
+    text-align:center;
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .foot .dot-line{ width: 28px; height:1px; background: var(--line); }
+
+  /* Tweaks panel hosting */
+  #tweaks-root{ position: fixed; inset:0; pointer-events: none; z-index: 50; }
+  #tweaks-root > *{ pointer-events: auto; }
+
+</style>
+</head>
+<body data-palette="bloom" data-wordmark="serif">
+
+<div class="bg-blooms" aria-hidden="true">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+
+<main class="frame">
+
+  <!-- top utility row -->
+  <div class="topbar">
+    <div class="date"><span class="dot"></span><span>Sat · May 9</span></div>
+    <div class="streak"><span class="seed"></span><span>7-day streak</span></div>
+  </div>
+
+  <!-- hero -->
+  <header class="hero">
+    <div class="wordmark">bloombert<span class="bloom-mark" aria-hidden="true">
+      <span class="petal"></span><span class="petal"></span><span class="petal"></span>
+      <span class="petal"></span><span class="petal"></span>
+      <span class="core"></span>
+    </span></div>
+    <p class="tagline">a daily word <em>bloom</em> · seven letters, one garden</p>
+  </header>
+
+  <div class="vine" aria-hidden="true">
+    <span class="stem"></span><span class="leaf"></span><span class="stem"></span>
+  </div>
+
+  <!-- featured today's puzzle -->
+  <a class="featured" href="#today">
+    <div class="feat-meta">
+      <span>Today's puzzle · No. 184</span>
+      <span class="new-pill">fresh</span>
+    </div>
+    <div class="row" style="align-items:flex-start; gap:14px;">
+      <div style="flex:1;">
+        <h2>Today's bloom</h2>
+        <p class="sub">Make as many words as you can from these seven letters. Each must use the golden one.</p>
+      </div>
+      <div class="cluster" aria-hidden="true">
+        <div class="hex">b</div><div class="hex">l</div><div class="hex">o</div>
+        <div class="hex row-2">m</div><div class="hex row-2 center">e</div><div class="hex row-2">r</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top: 14px;">
+      <div style="font-size:12px;color:var(--ink-soft);">
+        <strong style="color:var(--ink); font-weight:600;">42</strong> words possible · last seen <em style="font-style:italic;color:var(--ink-soft);">honeycomb</em>
+      </div>
+      <button class="play-btn" type="button" onclick="event.preventDefault();">
+        Start <span class="arrow"></span>
+      </button>
+    </div>
+  </a>
+
+  <!-- menu -->
+  <div class="menu">
+    <div class="label">More to plant</div>
+
+    <a class="card" href="#timed">
+      <div class="icon ic-timed">
+        <i class="ph-duotone ph-hourglass-medium" aria-hidden="true"></i>
+      </div>
+      <div class="copy">
+        <span class="t">Timed bloom</span>
+        <span class="s">3 minutes. Find as many as you can.</span>
+      </div>
+      <div class="chev"></div>
+    </a>
+
+    <a class="card" href="#create">
+      <div class="icon ic-create">
+        <i class="ph-duotone ph-pencil-simple-line" aria-hidden="true"></i>
+      </div>
+      <div class="copy">
+        <span class="t">Plant your own</span>
+        <span class="s">Build a custom 7-letter puzzle to share.</span>
+      </div>
+      <div class="chev"></div>
+    </a>
+
+    <a class="card" href="#yesterday">
+      <div class="icon ic-yesterday">
+        <i class="ph-duotone ph-plant" aria-hidden="true"></i>
+      </div>
+      <div class="copy">
+        <span class="t">Yesterday's garden</span>
+        <span class="s">See yesterday's words and the full bloom.</span>
+      </div>
+      <div class="chev"></div>
+    </a>
+  </div>
+
+  <div class="foot" aria-hidden="true">
+    <span class="dot-line"></span>
+    <span>tend daily</span>
+    <span class="dot-line"></span>
+  </div>
+
+</main>
+
+<div id="tweaks-root"></div>
+
+<!-- React + Tweaks -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel">
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "palette": "bloom",
+    "wordmark": "serif",
+    "showStreak": true,
+    "showFeatured": true
+  }/*EDITMODE-END*/;
+
+  function TweaksApp(){
+    const [t, setT] = useTweaks(TWEAK_DEFAULTS);
+
+    React.useEffect(() => {
+      document.body.dataset.palette = t.palette;
+      document.body.dataset.wordmark = t.wordmark;
+      document.querySelector('.topbar .streak').style.display = t.showStreak ? '' : 'none';
+      const feat = document.querySelector('.featured');
+      const vine = document.querySelector('.vine');
+      if (feat) feat.style.display = t.showFeatured ? '' : 'none';
+      if (vine) vine.style.display = t.showFeatured ? '' : 'none';
+    }, [t]);
+
+    return (
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Palette">
+          <TweakRadio
+            value={t.palette}
+            onChange={(v) => setT('palette', v)}
+            options={[
+              { value: 'bloom', label: 'Bloom' },
+              { value: 'meadow', label: 'Meadow' },
+              { value: 'dusk', label: 'Dusk' },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title="Wordmark">
+          <TweakRadio
+            value={t.wordmark}
+            onChange={(v) => setT('wordmark', v)}
+            options={[
+              { value: 'serif', label: 'Italic serif' },
+              { value: 'serif-bold', label: 'Bold serif' },
+              { value: 'round', label: 'Chunky' },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title="Sections">
+          <TweakToggle label="Show streak" value={t.showStreak} onChange={(v) => setT('showStreak', v)} />
+          <TweakToggle label="Show featured today card" value={t.showFeatured} onChange={(v) => setT('showFeatured', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('tweaks-root')).render(<TweaksApp />);
+</script>
+
+</body>
+</html>

@@ -61,7 +61,7 @@ function saveStats(stats) {
   }
 }
 
-function getDailyWordCounts(todayKey, numDays, todayWords) {
+function getDailyWordCounts(todayKey, numDays, todayWords, todayScore) {
   var counts = [];
   var d = new Date(todayKey + 'T00:00:00');
   for (var i = numDays - 1; i >= 0; i--) {
@@ -72,15 +72,45 @@ function getDailyWordCounts(todayKey, numDays, todayWords) {
     var dd = String(date.getDate()).padStart(2, '0');
     var key = y + '-' + m + '-' + dd;
     var wordCount = 0;
+    var score = 0;
     if (key === todayKey && todayWords !== undefined) {
       wordCount = todayWords;
+      if (todayScore !== undefined) score = todayScore;
     } else {
       var state = loadState(key);
       if (state && state.foundWords) {
         wordCount = state.foundWords instanceof Set ? state.foundWords.size : state.foundWords.length;
+        score = state.score || 0;
       }
     }
-    counts.push({ date: key, words: wordCount });
+    counts.push({ date: key, words: wordCount, score: score });
+  }
+  return counts;
+}
+
+function getTimedWordCounts(todayKey, numDays, todayWords, todayScore) {
+  var counts = [];
+  var d = new Date(todayKey + 'T00:00:00');
+  for (var i = numDays - 1; i >= 0; i--) {
+    var date = new Date(d);
+    date.setDate(date.getDate() - i);
+    var y = date.getFullYear();
+    var m = String(date.getMonth() + 1).padStart(2, '0');
+    var dd = String(date.getDate()).padStart(2, '0');
+    var key = y + '-' + m + '-' + dd;
+    var wordCount = 0;
+    var score = 0;
+    if (key === todayKey && todayWords !== undefined) {
+      wordCount = todayWords;
+      if (todayScore !== undefined) score = todayScore;
+    } else {
+      var state = loadTimedState(key);
+      if (state && state.foundWords) {
+        wordCount = Array.isArray(state.foundWords) ? state.foundWords.length : state.foundWords.size;
+        score = state.score || 0;
+      }
+    }
+    counts.push({ date: key, words: wordCount, score: score });
   }
   return counts;
 }
@@ -105,6 +135,29 @@ function checkAndUpdateStreak(stats, todayKey) {
   stats.lastPlayedDate = todayKey;
   if (stats.currentStreak > (stats.bestStreak || 0)) {
     stats.bestStreak = stats.currentStreak;
+  }
+  return stats;
+}
+
+function checkAndUpdateTimedStreak(stats, todayKey) {
+  if (!stats.timedLastPlayedDate) {
+    stats.timedCurrentStreak = 1;
+  } else {
+    const last = new Date(stats.timedLastPlayedDate + 'T00:00:00');
+    const today = new Date(todayKey + 'T00:00:00');
+    const diffDays = Math.round((today.getTime() - last.getTime()) / 86400000);
+
+    if (diffDays === 1) {
+      stats.timedCurrentStreak = (stats.timedCurrentStreak || 0) + 1;
+    } else if (diffDays > 1) {
+      stats.timedCurrentStreak = 1;
+    }
+    // diffDays === 0 means same day, no change
+  }
+
+  stats.timedLastPlayedDate = todayKey;
+  if ((stats.timedCurrentStreak || 0) > (stats.timedBestStreak || 0)) {
+    stats.timedBestStreak = stats.timedCurrentStreak;
   }
   return stats;
 }
