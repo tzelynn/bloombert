@@ -39,6 +39,9 @@
   let countdownActive = false;
   let countdownTimeout = null;
 
+  // True while the timed-mode start overlay is showing (user hasn't pressed Start yet)
+  let timedStartPending = false;
+
   // --- Icon SVGs ---
   const ICON_CLIPBOARD = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
   const ICON_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -110,6 +113,8 @@
   const yesterdaySummary = $('yesterday-summary');
   const countdownOverlay = $('countdown-overlay');
   const countdownNum = $('countdown-number');
+  const timedStartOverlay = $('timed-start-overlay');
+  const btnTimedStart = $('btn-timed-start');
   const modalTimedEnd = $('modal-timed-end');
   const timedEndScore = $('timed-end-score');
   const timedEndFound = $('timed-end-found');
@@ -143,6 +148,7 @@
     if (currentScreen === 'game' && name !== 'game' && mode === 'timed') {
       stopTimerInterval();
       stopCountdown();
+      hideTimedStartOverlay();
     }
 
     screenHome.hidden = name !== 'home';
@@ -357,6 +363,7 @@
     customPuzzleCode = null;
     stopTimerInterval();
     stopCountdown();
+    hideTimedStartOverlay();
     if (btnHintsInline) btnHintsInline.hidden = true;
 
     var seed = getTodaysTimedSeed();
@@ -449,8 +456,9 @@
         startTimerInterval();
       }
     } else {
-      // Fresh timed puzzle — show countdown, then start the timer.
-      startCountdown();
+      // Fresh timed puzzle — show the start overlay so the user controls when
+      // to begin. Clicking Start runs startCountdown() → startTimer().
+      showTimedStartOverlay();
     }
 
     return true;
@@ -717,6 +725,22 @@
     if (countdownOverlay) countdownOverlay.hidden = true;
   }
 
+  function showTimedStartOverlay() {
+    if (!timedStartOverlay) {
+      // No overlay markup — fall back to the original behaviour.
+      startCountdown();
+      return;
+    }
+    timedStartPending = true;
+    lockTimedInput();
+    timedStartOverlay.hidden = false;
+  }
+
+  function hideTimedStartOverlay() {
+    timedStartPending = false;
+    if (timedStartOverlay) timedStartOverlay.hidden = true;
+  }
+
   function startTimerInterval() {
     if (timerInterval) return;
     timerInterval = setInterval(tick, TIMER_TICK_MS);
@@ -730,6 +754,7 @@
   }
 
   function expireTimer() {
+    if (timedCompleted) return;
     stopTimerInterval();
     timedCompleted = true;
     saveTimedSnapshot();
@@ -897,13 +922,13 @@
 
   // --- Input handling ---
   function appendLetter(letter) {
-    if (mode === 'timed' && (timedCompleted || countdownActive)) return;
+    if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
     currentInput += letter.toLowerCase();
     renderInput();
   }
 
   function deleteLetter() {
-    if (mode === 'timed' && (timedCompleted || countdownActive)) return;
+    if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
     if (currentInput.length > 0) {
       currentInput = currentInput.slice(0, -1);
       renderInput();
@@ -917,16 +942,7 @@
 
   // --- Submit ---
   function submitGuess() {
-    if (mode === 'timed' && (timedCompleted || countdownActive)) return;
-    // Boundary case: Enter pressed in the gap between timer crossing 0 and
-    // the next tick firing. Without this, the submit processes the word
-    // (possibly opening modal-bloom-celebration), then expireTimer fires and
-    // has to race a modal swap. Catch it here and run expireTimer cleanly.
-    if (mode === 'timed' && timerStartTimestamp != null &&
-        Date.now() >= timerStartTimestamp + TIMED_DURATION_MS) {
-      expireTimer();
-      return;
-    }
+    if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
     const word = currentInput.toLowerCase();
     if (word.length === 0) return;
 
@@ -987,8 +1003,12 @@
     showScoreFloat(isBonus ? `+${points} bonus` : `+${points}`);
     document.dispatchEvent(new CustomEvent('Bloombert:success', { detail: { word, points } }));
 
-    // Flash success on hex tiles
+    // Flash success on hex tiles. Remove + reflow + re-add so that a second
+    // submission landing mid-animation restarts the flash (CSS animations
+    // don't re-trigger when the class is already present).
     hexGrid.querySelectorAll('.hex-tile').forEach(tile => {
+      tile.classList.remove('flash-success');
+      void tile.offsetWidth;
       tile.classList.add('flash-success');
       tile.addEventListener('animationend', () => tile.classList.remove('flash-success'), { once: true });
     });
@@ -1024,6 +1044,15 @@
       bloomWordDisplay.textContent = word.toUpperCase();
       openModal(modalBloom);
     }
+
+    // Boundary case: Enter pressed in the gap between the timer crossing 0
+    // and the next tick firing. Let the submission go through above, then
+    // trigger expiry so the timed-end modal appears. openTimedEndModal swaps
+    // over any already-open modal (e.g. bloom) cleanly.
+    if (mode === 'timed' && !timedCompleted && timerStartTimestamp != null &&
+        Date.now() >= timerStartTimestamp + TIMED_DURATION_MS) {
+      expireTimer();
+    }
   }
 
   // Persist current game state to the appropriate storage based on mode
@@ -1037,7 +1066,7 @@
 
   // --- Shuffle ---
   function shuffleOuter() {
-    if (mode === 'timed' && (timedCompleted || countdownActive)) return;
+    if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
     const outer = puzzle.letters.slice(1);
     for (let i = outer.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -1186,6 +1215,7 @@
     if (currentScreen === 'game' && name !== 'game' && mode === 'timed') {
       stopTimerInterval();
       stopCountdown();
+      hideTimedStartOverlay();
     }
     screenHome.hidden = name !== 'home';
     screenGame.hidden = name !== 'game';
@@ -1651,7 +1681,7 @@
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (document.querySelector('.modal:not([hidden])')) return;
       if (currentScreen !== 'game') return;
-      if (mode === 'timed' && (timedCompleted || countdownActive)) return;
+      if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
 
       if (e.key === 'Backspace') {
         e.preventDefault();
@@ -1666,7 +1696,7 @@
 
     // Hex tile clicks
     hexGrid.addEventListener('click', (e) => {
-      if (mode === 'timed' && (timedCompleted || countdownActive)) return;
+      if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
       const tile = e.target.closest('.hex-tile');
       if (tile && tile.dataset.letter) {
         appendLetter(tile.dataset.letter);
@@ -1700,6 +1730,13 @@
     if (yesterdayBtnHome) yesterdayBtnHome.addEventListener('click', function() {
       initHome();
       showScreen('home');
+    });
+
+    // Timed start overlay → begin the 3-2-1 countdown
+    if (btnTimedStart) btnTimedStart.addEventListener('click', function() {
+      if (!timedStartPending) return;
+      hideTimedStartOverlay();
+      startCountdown();
     });
 
     // Timed end modal → Home

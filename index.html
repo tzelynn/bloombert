@@ -207,6 +207,16 @@
       <span id="countdown-number" class="countdown-number"></span>
     </div>
 
+    <!-- Start overlay (timed mode only — shown before a fresh timed puzzle begins) -->
+    <div id="timed-start-overlay" class="timed-start-overlay" hidden>
+      <div class="timed-start-card">
+        <div class="timed-start-icon" aria-hidden="true">⏱️</div>
+        <h2 class="timed-start-title">Timed Bloombert</h2>
+        <p class="timed-start-desc">You'll have <strong>3 minutes</strong> to find as many words as you can. Ready when you are!</p>
+        <button id="btn-timed-start" class="action-btn action-btn--primary timed-start-btn" type="button">Start</button>
+      </div>
+    </div>
+
   </div><!-- /.game-container -->
 
   </div><!-- /#screen-game -->
