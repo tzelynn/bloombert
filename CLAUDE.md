@@ -61,8 +61,10 @@ Caveat: `showScreen()` closes any currently open modal as part of screen-switch 
 
 3-minute time-attack variant. Constants in `app.js`: `TIMED_DURATION_MS=180000`, `TIMER_WARNING_MS=30000` (last 30s switches `#timer-display` to `.timer-warning`), `TIMER_TICK_MS=250`.
 
-- Timer is timestamp-based: `state.startTimestamp` is captured on first input via `startTimer()`. `tick()` recomputes remaining from `Date.now()`, so leaving and returning to the screen (or reloading) resumes correctly. `initTimedPuzzle` checks elapsed on load — if already expired, the puzzle loads in completed/locked state.
-- On expiry: stop interval, set `timedCompleted = true`, persist, lock input (`btn-enter`/`btn-delete`/`btn-shuffle` disabled), launch confetti using the player's rank emoji, open `modal-timed-end`.
+- Fresh-puzzle flow: a `#timed-start-overlay` (in `#screen-game`) gates the timer behind a user-controlled Start. `initTimedPuzzle` calls `showTimedStartOverlay()` when no `state.startTimestamp` exists; clicking Start runs `startCountdown()` (3-2-1), which then calls `startTimer()`. While the overlay is up, `timedStartPending = true` and all input handlers short-circuit (alongside the existing `timedCompleted` / `countdownActive` guards). Navigating away (`showScreen` / `applyShowScreenFromPop`) hides the overlay.
+- Timer is timestamp-based: `state.startTimestamp` is captured when the 3-2-1 countdown completes inside `startTimer()`. `tick()` recomputes remaining from `Date.now()`, so leaving and returning to the screen (or reloading) resumes correctly. `initTimedPuzzle` checks elapsed on load — if already expired, the puzzle loads in completed/locked state.
+- On expiry: stop interval, set `timedCompleted = true`, persist, lock input (`btn-enter`/`btn-delete`/`btn-shuffle` disabled), launch confetti using the player's rank emoji, open `modal-timed-end`. `expireTimer()` is idempotent (early-returns if `timedCompleted`) so duplicate calls from a stray tick are safe.
+- Submit-at-expiry: if Enter is pressed in the gap between the timer crossing 0 and the next `tick()` firing, `submitGuess` lets the word go through *first*, then calls `expireTimer()` at the end. `openTimedEndModal` uses `swapModal` over any modal already open (e.g. `modal-bloom-celebration`).
 - Quality gates are looser than daily (see "Puzzle quality gates" below) so a playable puzzle is found in <1000 attempts.
 - Hints button (`#btn-hints-inline`) is hidden in timed mode.
 
