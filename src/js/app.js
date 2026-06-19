@@ -42,6 +42,12 @@
   // True while the timed-mode start overlay is showing (user hasn't pressed Start yet)
   let timedStartPending = false;
 
+  // Puzzle load state. On a cache miss the puzzle is generated off the critical
+  // render path (next frame) so the loading overlay paints first; input is
+  // locked and a token guards against a screen change landing mid-generation.
+  let puzzleLoading = false;
+  let puzzleLoadToken = 0;
+
   // --- Icon SVGs ---
   const ICON_CLIPBOARD = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
   const ICON_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -114,6 +120,7 @@
   const countdownOverlay = $('countdown-overlay');
   const countdownNum = $('countdown-number');
   const timedStartOverlay = $('timed-start-overlay');
+  const puzzleLoadingOverlay = $('puzzle-loading-overlay');
   const btnTimedStart = $('btn-timed-start');
   const modalTimedEnd = $('modal-timed-end');
   const timedEndScore = $('timed-end-score');
@@ -222,6 +229,10 @@
 
   // --- Init: home ---
   function initHome() {
+    // Supersede any pending cold puzzle load and clear its overlay/lock.
+    puzzleLoadToken++;
+    puzzleLoading = false;
+    hidePuzzleLoading();
     // Idempotent — only attach handlers once
     if (!homeHandlersAttached) {
       attachHomeHandlers();
@@ -275,6 +286,72 @@
     });
   }
 
+  function showPuzzleLoading() {
+    if (puzzleLoadingOverlay) puzzleLoadingOverlay.hidden = false;
+  }
+
+  function hidePuzzleLoading() {
+    if (puzzleLoadingOverlay) puzzleLoadingOverlay.hidden = true;
+  }
+
+  // Shared cold-path loader. When the puzzle is already cached, runs `finish`
+  // synchronously (instant, no flicker). Otherwise paints the loading overlay
+  // and defers generation to the next frame so the UI never appears frozen.
+  // `token` is the puzzleLoadToken captured by the caller; if the user
+  // navigates away (any other init increments the token) before the deferred
+  // work runs, it's superseded and aborted.
+  function loadPuzzleDeferred(cached, finish, token) {
+    puzzleLoading = false;
+    hidePuzzleLoading();
+    if (cached) {
+      finish(false);
+      return;
+    }
+    puzzleLoading = true;
+    showPuzzleLoading();
+    var run = function() {
+      if (token !== puzzleLoadToken) return; // superseded by a newer load
+      try {
+        finish(true);
+      } catch (e) {
+        console.error('[bloombert] puzzle load failed:', e);
+        showToast('Could not load puzzle');
+      } finally {
+        if (token === puzzleLoadToken) {
+          puzzleLoading = false;
+          hidePuzzleLoading();
+        }
+      }
+    };
+    if (window.requestAnimationFrame) {
+      // Two rAFs: the first lets the overlay paint, the second runs generation.
+      window.requestAnimationFrame(function() { window.requestAnimationFrame(run); });
+    } else {
+      setTimeout(run, 0);
+    }
+  }
+
+  // Opportunistically pre-generate puzzles the user is likely to open next
+  // (yesterday's solution, today's timed puzzle) so those views are instant.
+  // Runs during idle time; never blocks or throws.
+  function warmNeighborPuzzles() {
+    var warm = function() {
+      try {
+        var ySeed = getPrevDaySeeds(getTodaysSeed(), 1)[0];
+        if (!hasCachedPuzzle(ySeed)) getPuzzle(ySeed);
+      } catch (e) {}
+      try {
+        var tSeed = getTodaysTimedSeed();
+        if (!hasCachedTimedPuzzle(tSeed)) getTimedPuzzle(tSeed);
+      } catch (e) {}
+    };
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(warm);
+    } else {
+      setTimeout(warm, 0);
+    }
+  }
+
   // --- Init: daily puzzle ---
   function initDailyPuzzle() {
     mode = 'daily';
@@ -290,24 +367,29 @@
 
     dateKey = getTodaysDateKey();
     var seed = getTodaysSeed();
-    puzzle = generatePuzzle(seed);
-    thresholds = computeRankThresholds(puzzle.commonScore);
-    try { localStorage.setItem('bloombert-commonscore-' + dateKey, String(puzzle.commonScore)); } catch (e) {}
 
-    loadDailyState();
     stats = loadStats();
-    runOneTimeStatsFix();
-
-    difficultyBadge.textContent = puzzle.difficulty;
     dateDisplay.textContent = formatDate(dateKey);
     streakDisplay.textContent = stats.currentStreak > 1 ? `${stats.currentStreak} 🔥` : '';
 
-    currentInput = '';
-    renderHexGrid();
-    renderFoundWords();
-    renderRankBar();
-    renderInput();
-    updateHintNotification();
+    var token = ++puzzleLoadToken;
+    loadPuzzleDeferred(hasCachedPuzzle(seed), function(deferred) {
+      puzzle = getPuzzle(seed);
+      thresholds = computeRankThresholds(puzzle.commonScore);
+      try { localStorage.setItem('bloombert-commonscore-' + dateKey, String(puzzle.commonScore)); } catch (e) {}
+
+      loadDailyState();
+      runOneTimeStatsFix(); // after loadDailyState: it counts today's foundWords
+
+      difficultyBadge.textContent = puzzle.difficulty;
+      currentInput = '';
+      renderHexGrid();
+      renderFoundWords();
+      renderRankBar();
+      renderInput();
+      updateHintNotification();
+      warmNeighborPuzzles();
+    }, token);
   }
 
   // --- Init: custom puzzle ---
@@ -319,6 +401,11 @@
     mode = 'custom';
     isCustomPuzzle = true;
     customPuzzleCode = getCanonicalPuzzleCode(customData.keyLetter, customData.letters);
+
+    // Supersede any pending cold puzzle load (custom generates synchronously).
+    puzzleLoadToken++;
+    puzzleLoading = false;
+    hidePuzzleLoading();
 
     timedCompleted = false;
     stopTimerInterval();
@@ -367,112 +454,127 @@
     if (btnHintsInline) btnHintsInline.hidden = true;
 
     var seed = getTodaysTimedSeed();
-    try {
-      puzzle = generateTimedPuzzle(seed);
-    } catch (e) {
-      console.error('[bloombert] generateTimedPuzzle failed:', e);
-      showToast('Could not generate timed puzzle');
-      return false;
-    }
-
     dateKey = getTodaysDateKey();
-    thresholds = computeRankThresholds(puzzle.commonScore);
-    try { localStorage.setItem('bloombert-timed-commonscore-' + dateKey, String(puzzle.commonScore)); } catch (e) {}
 
-    var saved = loadTimedState(dateKey);
-    if (saved) {
-      // foundWords is a plain array in timed state — wrap in Set for in-memory use
-      foundWords = new Set(saved.foundWords || []);
-      // Recalculate score in case scoring rules changed
-      currentScore = 0;
-      bonusCount = 0;
-      for (const w of foundWords) {
-        const wb = !COMMON_WORDS.has(w);
-        currentScore += scoreWord(w, puzzle.letters, wb);
-        if (wb) bonusCount++;
-      }
-      hintsUsed = { revealedWords: [], selectedTwoLetterKey: null };
-      timerStartTimestamp = saved.startTimestamp || null;
-      timedCompleted = !!saved.completed;
-      // Persist recomputed score/bonus so saved.score doesn't lag if scoring
-      // rules ever change. Mirrors loadDailyState's symmetric save.
-      saveTimedSnapshot();
-    } else {
-      foundWords = new Set();
-      currentScore = 0;
-      bonusCount = 0;
-      hintsUsed = { revealedWords: [], selectedTwoLetterKey: null };
-      timerStartTimestamp = null;
-      timedCompleted = false;
-      saveTimedSnapshot();
-    }
+    // On a cache miss the modal-timed-end (for an already-expired puzzle) is
+    // opened directly inside finish(), since the deferred run happens *after*
+    // the caller's showScreen(). On a cache hit finish() runs synchronously
+    // (before showScreen), so we defer via pendingTimedEndModal as before.
+    var token = ++puzzleLoadToken;
+    loadPuzzleDeferred(hasCachedTimedPuzzle(seed), function(deferred) {
+      puzzle = getTimedPuzzle(seed);
+      thresholds = computeRankThresholds(puzzle.commonScore);
+      try { localStorage.setItem('bloombert-timed-commonscore-' + dateKey, String(puzzle.commonScore)); } catch (e) {}
 
-    stats = loadStats();
-    runOneTimeTimedStatsFix();
-    difficultyBadge.textContent = puzzle.difficulty;
-    dateDisplay.textContent = '';
-    streakDisplay.textContent = '';
-
-    currentInput = '';
-    renderHexGrid();
-    renderFoundWords();
-    renderRankBar();
-    renderInput();
-    updateHintNotification();
-
-    if (timerDisplay) {
-      timerDisplay.hidden = false;
-      timerDisplay.classList.remove('timer-warning');
-    }
-
-    if (timedCompleted) {
-      // Read-only: lock input and defer end-modal until after caller's
-      // showScreen() runs (showScreen closes any open modal as part of its
-      // screen-switch cleanup, so opening the modal here would be wiped).
-      lockTimedInput();
-      timerDisplay.textContent = '0:00';
-      pendingTimedEndModal = true;
-      return true;
-    }
-    // Active or not-yet-started: ensure input is unlocked
-    unlockTimedInput();
-    if (timerStartTimestamp != null) {
-      var elapsed = Date.now() - timerStartTimestamp;
-      if (elapsed >= TIMED_DURATION_MS) {
-        // Time elapsed while away — mark expired and persist, but defer
-        // opening the end modal (see comment above; showScreen would close it).
-        stopTimerInterval();
-        timedCompleted = true;
-        saveTimedSnapshot();
-        lockTimedInput();
-        if (timerDisplay) {
-          timerDisplay.textContent = '0:00';
-          timerDisplay.classList.add('timer-warning');
+      var saved = loadTimedState(dateKey);
+      if (saved) {
+        // foundWords is a plain array in timed state — wrap in Set for in-memory use
+        foundWords = new Set(saved.foundWords || []);
+        // Recalculate score in case scoring rules changed
+        currentScore = 0;
+        bonusCount = 0;
+        for (const w of foundWords) {
+          const wb = !COMMON_WORDS.has(w);
+          currentScore += scoreWord(w, puzzle.letters, wb);
+          if (wb) bonusCount++;
         }
-        pendingTimedEndModal = true;
+        hintsUsed = { revealedWords: [], selectedTwoLetterKey: null };
+        timerStartTimestamp = saved.startTimestamp || null;
+        timedCompleted = !!saved.completed;
+        // Persist recomputed score/bonus so saved.score doesn't lag if scoring
+        // rules ever change. Mirrors loadDailyState's symmetric save.
+        saveTimedSnapshot();
       } else {
-        // Resume ticking
-        renderTimer();
-        startTimerInterval();
+        foundWords = new Set();
+        currentScore = 0;
+        bonusCount = 0;
+        hintsUsed = { revealedWords: [], selectedTwoLetterKey: null };
+        timerStartTimestamp = null;
+        timedCompleted = false;
+        saveTimedSnapshot();
       }
-    } else {
-      // Fresh timed puzzle — show the start overlay so the user controls when
-      // to begin. Clicking Start runs startCountdown() → startTimer().
-      showTimedStartOverlay();
-    }
+
+      stats = loadStats();
+      runOneTimeTimedStatsFix();
+      difficultyBadge.textContent = puzzle.difficulty;
+      dateDisplay.textContent = '';
+      streakDisplay.textContent = '';
+
+      currentInput = '';
+      renderHexGrid();
+      renderFoundWords();
+      renderRankBar();
+      renderInput();
+      updateHintNotification();
+
+      if (timerDisplay) {
+        timerDisplay.hidden = false;
+        timerDisplay.classList.remove('timer-warning');
+      }
+
+      if (timedCompleted) {
+        // Read-only: lock input. See markTimedEndModal() below for modal handling.
+        lockTimedInput();
+        timerDisplay.textContent = '0:00';
+        markTimedEndModal(deferred);
+        return;
+      }
+      // Active or not-yet-started: ensure input is unlocked
+      unlockTimedInput();
+      if (timerStartTimestamp != null) {
+        var elapsed = Date.now() - timerStartTimestamp;
+        if (elapsed >= TIMED_DURATION_MS) {
+          // Time elapsed while away — mark expired and persist.
+          stopTimerInterval();
+          timedCompleted = true;
+          saveTimedSnapshot();
+          lockTimedInput();
+          if (timerDisplay) {
+            timerDisplay.textContent = '0:00';
+            timerDisplay.classList.add('timer-warning');
+          }
+          markTimedEndModal(deferred);
+        } else {
+          // Resume ticking
+          renderTimer();
+          startTimerInterval();
+        }
+      } else {
+        // Fresh timed puzzle — show the start overlay so the user controls when
+        // to begin. Clicking Start runs startCountdown() → startTimer().
+        showTimedStartOverlay();
+      }
+    }, token);
 
     return true;
+  }
+
+  // Open the timed-end modal for an already-expired puzzle. On the deferred
+  // (cache-miss) path finish() runs after showScreen(), so open it directly; on
+  // the synchronous (cache-hit) path defer via pendingTimedEndModal so the
+  // caller's showScreen() doesn't immediately close it (showScreen closes any
+  // open modal as part of its screen-switch cleanup).
+  function markTimedEndModal(deferred) {
+    if (deferred) {
+      openTimedEndModal();
+    } else {
+      pendingTimedEndModal = true;
+    }
   }
 
   // --- Init: yesterday view ---
   // Returns true on success, false if generation fails (caller falls back).
   function initYesterdayView() {
     mode = 'daily'; // safe default; we don't actively play in this screen
+    // Supersede any pending cold puzzle load and clear its overlay/lock.
+    puzzleLoadToken++;
+    puzzleLoading = false;
+    hidePuzzleLoading();
     var todaySeed = getTodaysSeed();
     var yesterdaySeed = getPrevDaySeeds(todaySeed, 1)[0];
     var yPuzzle;
     try {
-      yPuzzle = generatePuzzle(yesterdaySeed);
+      yPuzzle = getPuzzle(yesterdaySeed);
     } catch (e) {
       console.error('[bloombert] yesterday generatePuzzle failed:', e);
       showToast('Could not load yesterday');
@@ -922,12 +1024,14 @@
 
   // --- Input handling ---
   function appendLetter(letter) {
+    if (puzzleLoading) return;
     if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
     currentInput += letter.toLowerCase();
     renderInput();
   }
 
   function deleteLetter() {
+    if (puzzleLoading) return;
     if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
     if (currentInput.length > 0) {
       currentInput = currentInput.slice(0, -1);
@@ -942,6 +1046,7 @@
 
   // --- Submit ---
   function submitGuess() {
+    if (puzzleLoading) return;
     if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
     const word = currentInput.toLowerCase();
     if (word.length === 0) return;
@@ -1066,6 +1171,7 @@
 
   // --- Shuffle ---
   function shuffleOuter() {
+    if (puzzleLoading) return;
     if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
     const outer = puzzle.letters.slice(1);
     for (let i = outer.length - 1; i > 0; i--) {
@@ -1258,7 +1364,7 @@
     if (isNaN(seedNum)) return null;
     if (modeKind === 'timed') seedNum += 100000000;
     try {
-      var p = modeKind === 'timed' ? generateTimedPuzzle(seedNum) : generatePuzzle(seedNum);
+      var p = modeKind === 'timed' ? getTimedPuzzle(seedNum) : getPuzzle(seedNum);
       try { localStorage.setItem(prefix + dateKey, String(p.commonScore)); } catch (e) {}
       return p.commonScore;
     } catch (e) {

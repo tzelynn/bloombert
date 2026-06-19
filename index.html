@@ -202,6 +202,12 @@
     <!-- Toast notification -->
     <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
 
+    <!-- Loading overlay (shown only on a cold puzzle generation) -->
+    <div id="puzzle-loading-overlay" class="puzzle-loading-overlay" hidden>
+      <div class="puzzle-loading-spinner" aria-hidden="true"></div>
+      <p class="puzzle-loading-text">Growing today's garden…</p>
+    </div>
+
     <!-- Countdown overlay (timed mode only) -->
     <div id="countdown-overlay" class="countdown-overlay" hidden>
       <span id="countdown-number" class="countdown-number"></span>
