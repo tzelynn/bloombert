@@ -436,6 +436,112 @@ function generateCustomPuzzle(letters, keyLetter) {
   };
 }
 
+// --- Cached puzzle accessors -------------------------------------------------
+// Puzzles are fully deterministic per seed, so a generated result can be reused
+// on reloads / screen switches / the yesterday view instead of re-running the
+// expensive generation loop. Two tiers: an in-memory map (instant within a
+// session) backed by localStorage (survives reloads). generatePuzzle /
+// generateTimedPuzzle stay pure — only these wrappers touch the cache.
+
+const _puzzleMemCache = {};
+const TIMED_SEED_OFFSET = 100000000;
+
+function puzzleCacheKey(kind, seed) {
+  // Timed seeds are offset by TIMED_SEED_OFFSET; key by the underlying real
+  // date for parity with the bloombert-timed-commonscore-* cache.
+  if (kind === 'timed') {
+    return 'bloombert-timed-puzzle-' + seedToDateStr(seed - TIMED_SEED_OFFSET);
+  }
+  return 'bloombert-puzzle-' + seedToDateStr(seed);
+}
+
+// validWords is never read outside puzzle.js, so it isn't persisted — it's
+// reconstructed from commonWords + bonusWords on read, keeping the object shape
+// identical to a fresh generation.
+function serializePuzzle(p) {
+  return JSON.stringify({
+    letters: p.letters,
+    keyLetter: p.keyLetter,
+    commonWords: p.commonWords,
+    bonusWords: p.bonusWords,
+    commonScore: p.commonScore,
+    totalScore: p.totalScore,
+    hasBloom: p.hasBloom,
+    difficulty: p.difficulty,
+    mode: p.mode,
+  });
+}
+
+function deserializePuzzle(raw) {
+  const o = JSON.parse(raw);
+  if (!o || !o.letters || !o.commonWords || !o.bonusWords) return null;
+  const p = {
+    letters: o.letters,
+    keyLetter: o.keyLetter,
+    commonWords: o.commonWords,
+    bonusWords: o.bonusWords,
+    validWords: o.commonWords.concat(o.bonusWords),
+    commonScore: o.commonScore,
+    totalScore: o.totalScore,
+    hasBloom: o.hasBloom,
+    difficulty: o.difficulty,
+  };
+  if (o.mode) p.mode = o.mode;
+  return p;
+}
+
+function readPuzzleCache(kind, seed) {
+  const key = puzzleCacheKey(kind, seed);
+  if (_puzzleMemCache[key]) return _puzzleMemCache[key];
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const p = deserializePuzzle(raw);
+    if (p) _puzzleMemCache[key] = p;
+    return p;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writePuzzleCache(kind, seed, puzzle) {
+  const key = puzzleCacheKey(kind, seed);
+  _puzzleMemCache[key] = puzzle;
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(key, serializePuzzle(puzzle));
+  } catch (e) {
+    // ignore (quota or private mode) — in-memory cache still applies
+  }
+}
+
+// True if the puzzle is already cached (memory or localStorage) and can be
+// returned synchronously without running the generation loop.
+function hasCachedPuzzle(seed) {
+  return readPuzzleCache('daily', seed) !== null;
+}
+
+function hasCachedTimedPuzzle(seed) {
+  return readPuzzleCache('timed', seed) !== null;
+}
+
+function getPuzzle(seed) {
+  const cached = readPuzzleCache('daily', seed);
+  if (cached) return cached;
+  const p = generatePuzzle(seed);
+  writePuzzleCache('daily', seed, p);
+  return p;
+}
+
+function getTimedPuzzle(seed) {
+  const cached = readPuzzleCache('timed', seed);
+  if (cached) return cached;
+  const p = generateTimedPuzzle(seed);
+  writePuzzleCache('timed', seed, p);
+  return p;
+}
+
 function isValidGuess(word, letters, keyLetter, foundWords) {
   if (word.length < 4) {
     return { valid: false, reason: 'too_short' };
