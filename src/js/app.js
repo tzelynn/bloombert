@@ -5,6 +5,7 @@
   const TIMED_DURATION_MS = 180000; // 3 minutes
   const TIMER_WARNING_MS = 30000;   // last 30s — switch to red/coral
   const TIMER_TICK_MS = 250;
+  const EXPIRE_FREEZE_MS = 1000;    // dead zone after a timed puzzle ends
 
   // --- State ---
   let puzzle = null;
@@ -41,6 +42,12 @@
 
   // True while the timed-mode start overlay is showing (user hasn't pressed Start yet)
   let timedStartPending = false;
+
+  // True for EXPIRE_FREEZE_MS after a timed puzzle expires. The end modal
+  // appears under the player's finger, so a tap aimed at Enter would otherwise
+  // land on "Back to Home"/"Share" and dismiss the results by accident.
+  let expireFrozen = false;
+  let expireFreezeTimeout = null;
 
   // Puzzle load state. On a cache miss the puzzle is generated off the critical
   // render path (next frame) so the loading overlay paints first; input is
@@ -156,6 +163,7 @@
       stopTimerInterval();
       stopCountdown();
       hideTimedStartOverlay();
+      clearExpireFreeze();
     }
 
     screenHome.hidden = name !== 'home';
@@ -451,6 +459,7 @@
     stopTimerInterval();
     stopCountdown();
     hideTimedStartOverlay();
+    clearExpireFreeze();
     if (btnHintsInline) btnHintsInline.hidden = true;
 
     var seed = getTodaysTimedSeed();
@@ -868,6 +877,27 @@
     var rank = getRank(currentScore, thresholds);
     launchConfetti(rank.emoji);
     openTimedEndModal();
+    freezeAfterExpiry();
+  }
+
+  // Ignore every interaction with the end modal for a beat, so the tap that
+  // was in flight when the timer hit zero can't dismiss the results.
+  function freezeAfterExpiry() {
+    expireFrozen = true;
+    if (modalTimedEnd) modalTimedEnd.classList.add('modal--frozen');
+    if (timedEndHome) timedEndHome.disabled = true;
+    if (timedEndShare) timedEndShare.disabled = true;
+    clearTimeout(expireFreezeTimeout);
+    expireFreezeTimeout = setTimeout(clearExpireFreeze, EXPIRE_FREEZE_MS);
+  }
+
+  function clearExpireFreeze() {
+    clearTimeout(expireFreezeTimeout);
+    expireFreezeTimeout = null;
+    expireFrozen = false;
+    if (modalTimedEnd) modalTimedEnd.classList.remove('modal--frozen');
+    if (timedEndHome) timedEndHome.disabled = false;
+    if (timedEndShare) timedEndShare.disabled = false;
   }
 
   function lockTimedInput() {
@@ -1023,6 +1053,12 @@
   }
 
   // --- Input handling ---
+  function pressTile(target) {
+    if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
+    const tile = target.closest && target.closest('.hex-tile');
+    if (tile && tile.dataset.letter) appendLetter(tile.dataset.letter);
+  }
+
   function appendLetter(letter) {
     if (puzzleLoading) return;
     if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
@@ -1322,6 +1358,7 @@
       stopTimerInterval();
       stopCountdown();
       hideTimedStartOverlay();
+      clearExpireFreeze();
     }
     screenHome.hidden = name !== 'home';
     screenGame.hidden = name !== 'game';
@@ -1800,13 +1837,19 @@
       }
     });
 
-    // Hex tile clicks
+    // Hex tile presses. pointerdown, not click: a fast run of taps can have
+    // its click events swallowed on mobile (double-tap heuristics), which drops
+    // letters. pointerdown fires immediately, once per tap.
+    hexGrid.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      pressTile(e.target);
+    });
+
+    // Keyboard activation (Space/Enter on a focused tile) still arrives as a
+    // click with detail === 0. Pointer-driven clicks are already handled above.
     hexGrid.addEventListener('click', (e) => {
-      if (mode === 'timed' && (timedCompleted || countdownActive || timedStartPending)) return;
-      const tile = e.target.closest('.hex-tile');
-      if (tile && tile.dataset.letter) {
-        appendLetter(tile.dataset.letter);
-      }
+      if (e.detail !== 0) return;
+      pressTile(e.target);
     });
 
     // Action buttons
@@ -1847,6 +1890,7 @@
 
     // Timed end modal → Home
     if (timedEndHome) timedEndHome.addEventListener('click', function() {
+      if (expireFrozen) return;
       closeModal(modalTimedEnd);
       initHome();
       showScreen('home');
@@ -1854,6 +1898,7 @@
 
     // Timed end modal → Share (swap into share modal, like daily flow)
     if (timedEndShare) timedEndShare.addEventListener('click', function() {
+      if (expireFrozen) return;
       const text = getShareText();
       sharePreview.textContent = text;
       swapModal(modalTimedEnd, modalShare);

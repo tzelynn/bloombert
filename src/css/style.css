@@ -491,6 +491,9 @@ body {
   background: white;
   transition: transform 0.1s ease, filter 0.15s ease;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
   box-shadow: 0 2px 8px var(--shadow);
 }
 
@@ -593,7 +596,7 @@ body {
   display: flex;
   gap: 12px;
   justify-content: center;
-  padding: 8px 0 12px;
+  padding: 8px 0 max(28px, calc(12px + env(safe-area-inset-bottom, 0px)));
   margin-top: -8px;
   flex-shrink: 0;
 }
@@ -701,6 +704,9 @@ body {
 }
 
 .modal[hidden] { display: none; }
+
+/* Dead zone right after a timed puzzle expires — see freezeAfterExpiry() */
+.modal--frozen { pointer-events: none; }
 
 .modal-backdrop {
   position: absolute;
@@ -1434,6 +1440,10 @@ body {
 
 /* Compact-height phones — shrink the flower so the puzzle fits without scrolling */
 @media (max-height: 700px) {
+  .action-buttons {
+    padding-bottom: max(18px, calc(10px + env(safe-area-inset-bottom, 0px)));
+  }
+
   .flower-grid {
     width: 248px;
     height: 248px;
