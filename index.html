@@ -7,10 +7,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="preload" href="src/assets/Eggi-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
   <link rel="stylesheet" href="src/css/style.css">
 </head>
 <body>
+  <!-- Startup loader: covers the page until fonts + app are ready (hidden by app.js) -->
+  <div id="app-loader" class="app-loader" role="status" aria-label="Loading bloombert">
+    <div class="app-loader-plant" aria-hidden="true">
+      <div class="app-loader-flower">
+        <span class="app-loader-petal"></span><span class="app-loader-petal"></span><span class="app-loader-petal"></span>
+        <span class="app-loader-petal"></span><span class="app-loader-petal"></span>
+        <span class="app-loader-core"></span>
+      </div>
+      <span class="app-loader-stem"></span>
+      <span class="app-loader-leaf"></span>
+    </div>
+    <div class="app-loader-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+  </div>
+
   <!-- Home screen -->
   <div id="screen-home" class="screen">
     <div class="bg-blooms bg-blooms--home" aria-hidden="true">

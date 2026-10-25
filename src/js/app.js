@@ -2042,4 +2042,26 @@
   // --- Start ---
   bindPersistentEvents();
   routeFromURL();
+  hideAppLoader();
+
+  // Fade out the startup loader once the display fonts are ready, so titles
+  // never flash in the fallback font. Capped so a slow font CDN can't hang it.
+  function hideAppLoader() {
+    var loader = document.getElementById('app-loader');
+    if (!loader) return;
+    var fontsReady = document.fonts && document.fonts.load
+      ? Promise.all([
+          document.fonts.load('400 1em Eggi'),
+          document.fonts.load('600 1em "Baloo 2"'),
+          document.fonts.load('700 1em "Baloo 2"'),
+          document.fonts.load('400 1em Nunito'),
+          document.fonts.load('600 1em Nunito'),
+        ]).catch(function () {})
+      : Promise.resolve();
+    var timeout = new Promise(function (resolve) { setTimeout(resolve, 3000); });
+    Promise.race([fontsReady, timeout]).then(function () {
+      loader.classList.add('app-loader--done');
+      setTimeout(function () { loader.remove(); }, 400);
+    });
+  }
 })();
